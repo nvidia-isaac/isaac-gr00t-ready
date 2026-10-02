@@ -1,0 +1,1036 @@
+# GR00T-Ready evaluation criteria — machine-readable form of GR00T_Ready_Evaluation_Framework.md
+#
+# This file is generated from the markdown framework and is the source of truth for
+# automated test generation, scoring, and reporting. If the markdown changes, this
+# file must be regenerated/updated to match.
+#
+# Item fields:
+#   id          stable identifier used in test cases and results files
+#   name        short item name
+#   method      how to evaluate (from the "Method / Metric" column)
+#   levels      score -> criteria text. Highest key = max achievable score for the item.
+#   automation  auto   = fully scriptable on the robot/host
+#               semi   = scriptable but needs physical setup or a human in the loop
+#               manual = human judgment / physical procedure / document review
+#   conditional true if the item only applies when the hardware feature exists
+#               (score "n/a" in results when absent)
+#   must_have   true if the item is a certification must-have (critical/table-
+#               stakes/safety; see the Must-Have column in
+#               GR00T_Ready_Evaluation_Framework.md). Any must-have
+#               scoring below must_have_level blocks certification.
+#   must_have_level  minimum score the must-have item must reach.
+
+version: 1
+source: GR00T_Ready_Evaluation_Framework.md
+
+categories:
+  # ───────────────────────── HARDWARE ─────────────────────────
+  - id: hw_system_integrity
+    name: System Integrity
+    section: Hardware
+    items:
+      - id: HW-SI-01
+        must_have: true
+        must_have_level: 1
+        name: Emergency Stop (E-stop)
+        method: Dual-redundancy confirmed
+        automation: manual
+        levels:
+          0: No support
+          1: Only on-robot stop or only remote-controller stop
+          2: Both on-robot and remote-controller stop supported
+      - id: HW-SI-02
+        must_have: true
+        must_have_level: 1
+        name: Port Functionality (USB, Ethernet)
+        method: >-
+          Operational integrity confirmed: exercise every external port and measure
+          sustained throughput per port type
+        automation: auto
+        levels:
+          0: No support
+          1: All ports functional
+          2: All ports functional and each sustains at least its class rate (1 GbE
+            class for Ethernet, USB 3.x class or better for USB)
+      - id: HW-SI-03
+        name: Integrated Audio (Mic & Speaker)
+        method: Confirm functionality
+        automation: semi
+        levels:
+          0: No support
+          1: Only speaker
+          2: Both mic and speaker functional
+      - id: HW-SI-04
+        must_have: true
+        must_have_level: 1
+        name: Debug Mode Connectivity
+        method: Confirm successful connection
+        automation: semi
+        levels:
+          0: No support
+          1: Debug access to partial devices (head cameras, robot joints, wrist cameras, IMUs and other necessary sensors)
+          2: Debug access to all devices on the robot
+      - id: HW-SI-05
+        name: Remote/App Control
+        method: Confirm functionality
+        automation: manual
+        levels:
+          0: No support
+          1: Only remote controller or only App
+          2: Both remote controller and App supported
+      - id: HW-SI-06
+        must_have: true
+        must_have_level: 1
+        name: Power Supply Output
+        method: Verify against manufacturer specs (voltage, current, and power)
+        automation: semi
+        levels:
+          0: No support
+          1: Minimum power supply for all peripherals running in normal mode
+          2: Maximum power supply for all peripherals running in max mode
+
+  - id: hw_onboard_compute
+    name: Onboard Compute
+    section: Hardware
+    items:
+      - id: HW-OC-01
+        name: JetPack Release and Software Stack
+        method: Verify the JetPack release, confirm the system boots to a normal operational state, and validate that all required libraries are installed and load correctly
+        automation: auto
+        levels:
+          0: Does not boot or required libraries missing
+          1: Previous JetPack version
+          2: Latest JetPack version
+      - id: HW-OC-02
+        name: Thor Operational Stability and Throughput
+        method: >-
+          Max stability / throughput: run a sustained fp16 GEMM compute benchmark and
+          a memory-bandwidth benchmark in the platform's max sustained power mode.
+          Compare against the reference figures for the same benchmark on the Jetson
+          Thor reference platform, not against marketing peak numbers
+        automation: auto
+        levels:
+          0: Below 85% of the reference benchmark result, or throughput unstable
+          2: At least 85% of the reference benchmark result, stable within +/-5%
+            across the run
+      - id: HW-OC-03
+        name: Endurance Stability (MAXN)
+        method: >-
+          Continuous stability in the platform's maximum sustained power mode (MAXN or
+          the vendor-named equivalent); record the mode used
+        automation: auto
+        levels:
+          0: Fails endurance check
+          1: More than 3 hours in the maximum sustained power mode
+      - id: HW-OC-04
+        name: Sustained Clock Stability Under Inference Load
+        method: >-
+          No throttling under inference load in the platform's maximum sustained power
+          mode (MAXN or the vendor-named equivalent); record the mode used
+        automation: auto
+        levels:
+          0: Throttling or overcurrent warnings observed
+          2: No throttling or overcurrent warning
+      - id: HW-OC-05
+        name: RAM Capacity
+        method: Capacity verified to be at least that of Jetson Thor
+        automation: auto
+        levels:
+          0: Less than 128 GB
+          2: 128 GB or more
+      - id: HW-OC-06
+        name: NVMe Storage Capacity and Throughput
+        method: Format EXT4 on NVMe storage (>1 TB); stress test runs for >4 hours with no failures
+        automation: auto
+        levels:
+          0: No support
+          1: Format succeeds on >1 TB storage
+          2: Stress test >4 hours with no failures
+      - id: HW-OC-07
+        name: PTP (Precision Time Protocol)
+        method: PTP stability verified
+        automation: auto
+        levels:
+          0: No support
+          1: Less than 100 us time offset
+          2: Less than 10 us time offset
+      - id: HW-OC-08
+        name: Hardware Modules (Wi-Fi, Bluetooth, QSFP)
+        method: >-
+          All fitted modules (Wi-Fi, Bluetooth, QSFP) verified enabled and
+          functioning; modules not fitted are excluded from the assessment and named
+          in the result note
+        automation: auto
+        levels:
+          0: No wireless connectivity functional
+          1: Some fitted modules functional
+          2: All fitted modules functional
+
+  - id: hw_sensor
+    name: Sensor
+    section: Hardware
+    items:
+      - id: HW-SN-01
+        name: USB Port Count for Peripherals
+        method: >-
+          Verify the data transfer of every USB port and compare the usable count
+          against the peripherals the platform requires; record both numbers
+        automation: auto
+        levels:
+          0: Too few usable ports for the required peripherals
+          1: Enough usable ports for all required peripherals
+          2: Enough usable ports for all required peripherals with spare capacity
+      - id: HW-SN-02
+        name: USB Bandwidth and Stability
+        method: Max throughput, zero dropouts under load
+        automation: auto
+        levels:
+          0: No support
+          1: Bandwidth more than 1 Gbps
+          2: Bandwidth more than 5 Gbps
+      - id: HW-SN-03
+        must_have: true
+        must_have_level: 1
+        name: Head Camera Stability at Max Resolution
+        method: Long-duration stability at max resolution
+        automation: auto
+        levels:
+          0: Unstable
+          1: More than 1 hour
+          2: More than 4 hours
+      - id: HW-SN-04
+        must_have: true
+        must_have_level: 1
+        name: Head Camera FoV for Manipulation
+        method: Set positions for head joints and check the FoV of camera
+        automation: semi
+        levels:
+          0: No support
+          1: Can set head position and joints
+          2: FoV can see arm and hands
+
+  - id: hw_actuator
+    name: Actuator
+    section: Hardware
+    items:
+      - id: HW-AC-01
+        must_have: true
+        must_have_level: 1
+        name: Read and Command Joint States
+        method: Compare commanded vs. read values
+        automation: auto
+        levels:
+          0: No support
+          1: Greater than 250 Hz control frequency
+          2: Greater than 1000 Hz control frequency
+      - id: HW-AC-02
+        name: Joint Angle Range Limits
+        method: Verify limits against manufacturer specs
+        automation: semi
+        levels:
+          0: Outside tolerance
+          1: Error within 5%
+          2: Error within 1%
+      - id: HW-AC-03
+        name: PD Controller Precision and Responsiveness
+        method: >-
+          Commanded step response at the vendor's recommended gains; record the step
+          size and gain configuration with the result. Measure settling time to within
+          band and steady-state error in absolute joint units, plus any overshoot
+        automation: auto
+        levels:
+          0: Overshoot present, or settling beyond 300 ms, or steady-state error
+            2 degrees or worse
+          1: No overshoot, settles within +/-5% of the step in under 300 ms, absolute
+            steady-state error under 2 degrees
+          2: No overshoot, settles within +/-1% of the step in under 100 ms, absolute
+            steady-state error under 0.5 degrees
+      - id: HW-AC-04
+        must_have: true
+        must_have_level: 1
+        name: Single-Arm and Dual-Arm Payload Limits
+        method: Verify max payload against specs
+        automation: manual
+        levels:
+          0: Neither matches
+          1: Single arm matches
+          2: Both match
+
+  - id: hw_network
+    name: Network
+    section: Hardware
+    items:
+      - id: HW-NW-01
+        name: Network Bandwidth for Sensor Streams
+        method: >-
+          Verify the network bandwidth with a sustained bidirectional throughput test
+          on each fitted interface. Level 2 applies only where a 10 GbE-or-faster
+          interface is fitted; on 1 GbE-only platforms level 1 is the maximum
+          attainable and the result note must record the fitment
+        automation: auto
+        levels:
+          0: Insufficient for the platform's sensor streams
+          1: Sustains at least 1 GbE class measured
+          2: Sustains at least 10 Gb/s on a fitted 10 GbE-or-faster interface
+      - id: HW-NW-02
+        name: Ethernet Connectivity
+        method: Verify with lab Ethernet; speedtest-cli reports > 30M
+        automation: auto
+        levels:
+          0: Cannot connect
+          1: Able to connect
+          2: Throughput passes
+      - id: HW-NW-03
+        name: Wi-Fi Connectivity
+        method: Verify with lab Wi-Fi; speedtest-cli reports > 30M
+        automation: auto
+        levels:
+          0: Cannot connect
+          1: Able to connect
+          2: Throughput passes
+
+  - id: hw_dexterous_hands
+    name: Dexterous Hands Basic
+    section: Hardware
+    items:
+      - id: HW-DH-01
+        name: Joint Operational Range and Articulation
+        method: >-
+          Verify full operational range against specs for each independently-actuated
+          joint, measured in absolute joint units. Enumerate coupled or underactuated
+          joints in the result note and assess them for presence of motion only
+        automation: semi
+        levels:
+          0: Any independently-actuated joint outside 5% of its specified range
+          1: All independently-actuated joints within 5% of specified range
+          2: All independently-actuated joints within 1% of specified range
+      - id: HW-DH-02
+        name: Grasping Force/Torque and Payload Limits
+        method: Verify max limits against specs
+        automation: manual
+        levels:
+          0: Neither matches
+          1: Only payload matches
+          2: All match
+      - id: HW-DH-03
+        name: Hand Control Modes and Configurations
+        method: Verify every supported mode and config
+        automation: semi
+        levels:
+          0: No support
+          1: Program control supported
+          2: All modes supported
+      - id: HW-DH-04
+        name: Tactile Sensor Resolution/Frequency/Contact Info
+        method: >-
+          Verify max resolution / frequency against specs. Use the spatial branch that
+          matches the sensor class: taxel pitch for taxel arrays, image resolution and
+          FPS for vision-based tactile. Record which branch was used
+        automation: semi
+        conditional: true
+        levels:
+          0: No support
+          1: At least 30 Hz, with 1 cm taxel pitch (taxel array) or contact features
+            resolved at 1 cm or better (vision-based), and 0.1 N load sensitivity
+          2: At least 180 Hz, with 1 mm taxel pitch (taxel array) or contact features
+            resolved at 1 mm or better (vision-based), and 0.005 N load sensitivity
+
+  # ───────────────────────── SOFTWARE ─────────────────────────
+  - id: sw_os
+    name: Operating System (OS)
+    section: Software
+    items:
+      - id: SW-OS-01
+        must_have: true
+        must_have_level: 2
+        name: Required System and Application Packages
+        method: >-
+          Verify all packages and their dependencies install and load: Isaac ROS,
+          Isaac Teleop, GR00T, and LEAPP (Lightweight Export Annotations for Policy
+          Pipelines, https://github.com/nvidia-isaac/leapp — requires Python 3.10+ and
+          PyTorch 2.6+; verify with `python -c "import leapp"`)
+        automation: auto
+        levels:
+          0: Missing required packages
+          2: All packages install and load
+      - id: SW-OS-02
+        name: Reference Application/Policy Deployment
+        method: Replay trajectories with ROS2 controller
+        automation: auto
+        levels:
+          0: Does not build/deploy
+          2: Replay matches benchmark positions
+      - id: SW-OS-03
+        name: Storage Throughput (IOPS) for Data Logging
+        method: Max IOPS meets needs for all concurrent streams
+        automation: auto
+        levels:
+          0: Insufficient
+          1: More than 100 MB/s
+          2: More than 1000 MB/s
+      - id: SW-OS-04
+        name: SM Count Reporting
+        method: Verify SM reporting
+        automation: auto
+        levels:
+          0: Incorrect
+          2: Matches spec
+
+  - id: sw_sdk_imu
+    name: SDK — IMU
+    section: Software
+    items:
+      - id: SW-IMU-01
+        must_have: true
+        must_have_level: 1
+        name: Synchronized Time and Data Streams
+        method: >-
+          Test synchronized time against a timestamp source whose resolution is finer
+          than the level being assessed; record the source and its resolution. Where
+          the available timestamp is quantized at or above a level's threshold, that
+          level cannot be assessed and the next lower level is the maximum attainable
+        automation: auto
+        levels:
+          0: Not synchronized
+          1: Less than 1 ms jitter
+          2: Less than 0.1 ms jitter, measured against a sub-0.1 ms timestamp source
+      - id: SW-IMU-02
+        name: Stability and Noise Characteristics
+        method: Verify max stability / low noise
+        automation: auto
+        levels:
+          0: Outside tolerance
+          1: Gyro noise 0.1 °/s/√Hz and accel noise 0.01 m/s²
+          2: Gyro noise 0.01 °/s/√Hz and accel noise 0.003 m/s²
+      - id: SW-IMU-03
+        name: Time Sync Accuracy/Jitter to Control Loop
+        method: Verify max accuracy, minimal jitter
+        automation: auto
+        levels:
+          0: Does not match
+          2: All match
+      - id: SW-IMU-04
+        name: Intrinsic Error Correction (Bias, Scale Factor)
+        method: Verify max tolerance compliance
+        automation: semi
+        levels:
+          0: Does not match
+          2: All match
+      - id: SW-IMU-05
+        name: Long-Term Stability (Zero-Drift/Bias Gradient)
+        method: Robot at rest >= 1 hour; measure worst-axis fused-attitude (rpy) drift in °/h
+        automation: auto
+        levels:
+          0: Attitude drift 1 °/h or more
+          1: More than 1 hour with attitude drift under 1 °/h
+          2: More than 1 hour with attitude drift under 0.5 °/h
+      - id: SW-IMU-06
+        name: IMU Output Frequency
+        method: >-
+          Verify IMU output frequency and stability at an on-robot subscriber, so
+          transport losses off the robot are excluded. Where the vendor publishes no
+          rate specification, record that and assess against level 1 only
+        automation: auto
+        levels:
+          0: Below 100 Hz or unstable
+          1: More than 100 Hz
+          2: Meets the vendor-specified rate with stable output and under 0.1% sample
+            loss measured on-robot
+
+  - id: sw_sdk_ft
+    name: SDK — Force/Torque Sensors
+    section: Software
+    items:
+      - id: SW-FT-01
+        conditional: true  # platform may lack F/T sensors
+        name: Stable Low-Noise 6-DOF Readings
+        method: Verify max stability / low noise
+        automation: semi
+        levels:
+          0: Outside tolerance
+          1: Error within 1%
+          2: Error within 0.1%
+      - id: SW-FT-02
+        conditional: true  # platform may lack F/T sensors
+        name: Zero-Drift When Unloaded
+        method: Verify zero-drift
+        automation: auto
+        levels:
+          0: Outside tolerance
+          1: Error within 0.5% full scale
+          2: Error within 0.1% full scale
+      - id: SW-FT-03
+        conditional: true  # platform may lack F/T sensors
+        name: Response Linearity Under Known Loads
+        method: Verify max linearity
+        automation: semi
+        levels:
+          0: Does not match
+          2: All match
+      - id: SW-FT-04
+        conditional: true  # platform may lack F/T sensors
+        name: F/T Data Output Frequency
+        method: Test the frequency of data output
+        automation: auto
+        levels:
+          0: 1000 Hz or below
+          2: More than 1000 Hz
+  - id: sw_sdk_tactile
+    name: SDK — Tactile Sensors
+    section: Software
+    items:
+      - id: SW-TS-01
+        name: All Taxels Report Correctly
+        method: Verify all taxels functional
+        automation: auto
+        levels:
+          0: Dead or stuck taxels affecting more than 5% of the array
+          1: All taxels report, with up to 5% degraded but calibratable
+          2: All taxels report correctly
+      - id: SW-TS-02
+        name: Responsiveness and Force-Reading Linearity
+        method: Verify max linearity and responsiveness
+        automation: semi
+        levels:
+          0: Non-monotonic response, or outside the specified linearity tolerance
+          1: Monotonic and responsive, within twice the specified linearity tolerance
+          2: Meets the specified linearity and responsiveness figures
+      - id: SW-TS-03
+        name: Persistence and Noise Characteristics
+        method: Verify max stability / low noise
+        automation: auto
+        levels:
+          0: Drift or noise that prevents contact detection
+          1: Stable readings with residual noise correctable by calibration
+          2: Meets the specified stability and noise figures without correction
+      - id: SW-TS-04
+        name: Vision-Based Tactile Data Stream Bandwidth
+        method: Verify max resolution / FPS supported against the specs
+        automation: auto
+        conditional: true
+        levels:
+          0: No accessible data stream
+          1: Stream available at reduced resolution or FPS, or without a raw-image path
+          2: Full specified resolution and FPS available, raw-image path included
+      - id: SW-TS-05
+        name: Vision-Based Tactile Sensor Deactivation
+        method: Verify deactivation feature
+        automation: auto
+        conditional: true
+        levels:
+          0: No support
+          1: Deactivation possible but without a documented or runtime-accessible API
+          2: Supported through a documented runtime API
+      - id: SW-TS-06
+        name: Tactile Data Stream Refresh Rate
+        method: >-
+          Test refresh rate sustained at the host; record the vendor's rated maximum
+          rate for comparison
+        automation: auto
+        conditional: true
+        levels:
+          0: Below 150 Hz and below the vendor's rated maximum
+          1: At least 150 Hz sustained
+          2: Above 200 Hz, or sustains the vendor's rated maximum rate where that
+            maximum is 200 Hz or lower
+
+  - id: sw_sdk_camera
+    name: SDK — Cameras
+    section: Software
+    items:
+      - id: SW-CAM-01
+        must_have: true
+        must_have_level: 1
+        name: Functional Integrity of All Camera Streams
+        method: Verify all streams (color, depth) fully functional
+        automation: auto
+        levels:
+          0: No support
+          1: Head cameras supported
+          2: All cameras supported
+      - id: SW-CAM-02
+        name: Camera Calibration
+        method: Verify camera calibration parameters and calibration quality
+        automation: semi
+        levels:
+          0: No calibration data
+          1: Calibration data provided
+          2: Calibration verified and passes accuracy validation
+      - id: SW-CAM-03
+        name: Multi-Camera Time Synchronization
+        method: Verify all camera streams use a common time source (PTP/system clock/hardware sync) and validate synchronization accuracy
+        automation: auto
+        levels:
+          0: No common time source
+          1: Common timestamp source available
+          2: Synchronization verified, max timestamp difference < 1 ms
+      - id: SW-CAM-04
+        name: Color Reproduction and Consistency
+        method: Verify color accuracy, white balance stability, and consistency under different lighting conditions against reference color targets
+        automation: semi
+        levels:
+          0: Severe color casts or shifts
+          1: Minor color deviation under some lighting conditions, but image remains usable
+          2: Natural and consistent color reproduction across all tested lighting conditions
+      - id: SW-CAM-05
+        name: Supported Resolution and Frame Rate
+        method: Verify camera resolution, frame rate, and stream stability
+        automation: auto
+        levels:
+          0: No specifications or unstable
+          1: Camera specifications provided
+          2: Resolution and FPS verified against specifications with stable streaming
+      - id: SW-CAM-06
+        must_have: true
+        must_have_level: 1
+        name: Stereo and Wrist Camera FoV Coverage
+        method: Verify stereo and wrist cameras cover the manipulation workspace, including hands, tools, and nearby objects
+        automation: semi
+        levels:
+          0: Inadequate coverage
+          1: Workspace coverage acceptable but with noticeable blind spots or occlusions
+          2: Wide FoV validated with full workspace coverage and minimal occlusion
+
+  - id: sw_sdk_temperature
+    name: SDK — Temperature Sensors
+    section: Software
+    items:
+      - id: SW-TMP-01
+        name: Accurate Real-Time Temperature Streams
+        method: Verify accurate real-time readings
+        automation: auto
+        levels:
+          0: Outside tolerance
+          2: Error within 1 °C
+      - id: SW-TMP-02
+        name: Operating Range Compliance Under Stress
+        method: Verify operating range compliance
+        automation: auto
+        levels:
+          0: Does not match
+          2: All match
+      - id: SW-TMP-03
+        name: Overheating Warning for Abnormal Joints
+        method: Verify warning system
+        automation: semi
+        levels:
+          0: No support
+          2: Supported
+      - id: SW-TMP-04
+        name: Temperature Data Refresh Rate
+        method: Verify the refresh rate frequency
+        automation: auto
+        levels:
+          0: 10 Hz or below
+          2: More than 10 Hz
+
+  - id: sw_wbc
+    name: Whole Body Control (WBC)
+    section: Software
+    items:
+      - id: SW-WBC-01
+        must_have: true
+        must_have_level: 2
+        name: WBC Policy Existence and Stability
+        method: Verify WBC under max load with all peripherals
+        automation: semi
+        levels:
+          0: No support
+          2: Supported and stable
+      - id: SW-WBC-02
+        name: Fixed-Base Manipulation Stability (Initial Posture)
+        method: Verify continuous balance
+        automation: semi
+        levels:
+          0: Unstable
+          1: More than 1 hour
+          2: More than 3 hours
+      - id: SW-WBC-03
+        name: Stability During Upper-Body Manipulation
+        method: Verify continuous balance
+        automation: semi
+        levels:
+          0: Unstable
+          1: More than 1 hour
+          2: More than 3 hours
+      - id: SW-WBC-04
+        must_have: true
+        must_have_level: 1
+        name: Locomotion Stability (Walking, All Peripherals)
+        method: Verify continuous balance
+        automation: semi
+        levels:
+          0: Unstable
+          1: More than 1 hour
+          2: More than 3 hours
+      - id: SW-WBC-05
+        must_have: true
+        must_have_level: 1
+        name: Locomanipulation Stability (Walking, Max Payload)
+        method: Verify continuous balance with max payload
+        automation: semi
+        levels:
+          0: Unstable
+          1: More than 1 hour
+          2: More than 3 hours
+      - id: SW-WBC-06
+        name: Independent Upper-Body Control
+        method: Verify independent control
+        automation: auto
+        levels:
+          0: No support
+          1: Arm + head control
+          2: Arm + head + waist control
+
+  - id: sw_teleoperation
+    name: Teleoperation
+    section: Software
+    items:
+      - id: SW-TEL-01
+        must_have: true
+        must_have_level: 2
+        name: Retargeter Precision and Reliability
+        method: Verify max precision and reliability
+        automation: semi
+        levels:
+          0: Does not match
+          2: All match
+      - id: SW-TEL-02
+        name: Glove-Based Teleop End-to-End
+        method: Verify max accuracy / consistency
+        automation: semi
+        levels:
+          0: Does not work
+          2: All match with no pause or jitter
+      - id: SW-TEL-03
+        name: Glove Calibration Utility
+        method: Verify max calibration fidelity
+        automation: semi
+        levels:
+          0: No utility
+          2: Supported
+      - id: SW-TEL-04
+        name: Haptic Feedback System
+        method: Verify full range haptic
+        automation: manual
+        levels:
+          0: No support
+          2: All match
+      - id: SW-TEL-05
+        name: Hand-Tracking Based Teleop End-to-End
+        method: Verify max accuracy / consistency
+        automation: semi
+        levels:
+          0: Does not work
+          2: All match with no pause or jitter
+      - id: SW-TEL-06
+        name: End-to-End Teleop Latency
+        method: >-
+          Test end-to-end latency from operator input capture to commanded robot
+          motion, timestamped at both ends. Where only the robot-side segment
+          (command received to motion) can be instrumented, record that scope
+          explicitly with the result
+        automation: auto
+        levels:
+          0: 50 ms P99 or above
+          1: Less than 50 ms P99 latency
+          2: Less than 20 ms P99 latency
+
+  - id: sw_sim_model
+    name: Simulation — Robot Model
+    section: Software
+    items:
+      - id: SW-SIM-01
+        must_have: true
+        must_have_level: 1
+        name: Kinematic/Dynamic Properties Match Physical Robot
+        method: >-
+          Verify fidelity alignment by system identification: excite the physical robot
+          across its joints, identify the dynamic parameters (link masses, inertias,
+          joint friction, torque constants) from the measured response, and compare
+          them against the values declared in the simulation asset. Kinematics are
+          compared against the manufacturer's specification
+        automation: semi
+        levels:
+          0: Does not match
+          1: Only PhysX matches
+          2: All match
+      - id: SW-SIM-02
+        name: Visual Model (Meshes) Linked and Displayed
+        method: Verify visual integrity
+        automation: auto
+        levels:
+          0: Broken meshes
+          2: All correct
+      - id: SW-SIM-03
+        name: Home/Initial Posture Configuration
+        method: Verify posture
+        automation: auto
+        levels:
+          0: Does not match
+          2: All match
+
+  - id: sw_sim_isaac
+    name: Simulation — Isaac Sim
+    section: Software
+    items:
+      - id: SW-SIM-04
+        name: Assets Load Error-Free in Isaac Sim
+        method: Verify error-free loading
+        automation: auto
+        levels:
+          0: Errors on load
+          2: Loads without errors/warnings
+      - id: SW-SIM-05
+        name: PhysX Rigid Body Simulation Fidelity
+        method: >-
+          Verify physics fidelity against system identification results from the
+          physical robot: replay an identical joint trajectory in PhysX and on the
+          robot, and compare the resulting joint states and contact behaviour
+        automation: semi
+        levels:
+          0: Does not match
+          2: All match
+      - id: SW-SIM-06
+        name: Newton Rigid Body Simulation Fidelity
+        method: >-
+          Verify physics fidelity against system identification results from the
+          physical robot: replay an identical joint trajectory in Newton and on the
+          robot, and compare the resulting joint states and contact behaviour
+        automation: semi
+        levels:
+          0: Does not match
+          2: All match
+      - id: SW-SIM-07
+        name: Communication Interfaces (UCX Server)
+        # UCX = Unified Communication X, NVIDIA's core communications library
+        # (get/put, send/receive, active messages between CPU/GPU endpoints).
+        # Ref: https://docs.nvidia.com/multi-node-nvlink-systems/multi-node-tuning-guide/ucx.html
+        method: >-
+          Verify UCX (Unified Communication X) comms: the simulated asset exposes a
+          UCX endpoint ("UCX server") that an external client connects to. Confirm the
+          UCX stack and its transports are present (e.g. ucx_info -d, UCX_TLS), then
+          close a command-in / status-out loop over that endpoint — commands sent by
+          the client drive the asset and the resulting joint state is returned to the
+          client. Record roundtrip count/rate, command-vs-state tracking error, and
+          transport errors.
+        automation: auto
+        levels:
+          0: No support
+          2: Supported
+      - id: SW-SIM-08
+        name: Motion Control Stability and Determinism in Isaac Sim
+        method: Verify stability / determinism
+        automation: auto
+        levels:
+          0: Unstable or non-deterministic
+          2: Stable and deterministic
+
+  - id: sw_sim_mujoco
+    name: Simulation — MuJoCo
+    section: Software
+    items:
+      - id: SW-SIM-09
+        name: Assets Load Correctly in MuJoCo
+        method: Verify error-free loading
+        automation: auto
+        levels:
+          0: Errors on load
+          2: Loads without errors
+      - id: SW-SIM-10
+        name: MuJoCo Rigid Body Simulation Fidelity
+        method: >-
+          Verify physics fidelity in two parts. Structural: DoF count, link masses and
+          inertias in the MuJoCo model against the source URDF/USD. Dynamic: replay an
+          identical joint trajectory in MuJoCo and on the physical robot and compare
+          the resulting joint states. Record which parts were run
+        automation: semi
+        levels:
+          0: Structural mismatch, or simulation non-deterministic across identical runs
+          1: Structural properties match within 1% and simulation is deterministic
+          2: Structural match plus replayed trajectories tracking the physical robot
+            within 5% RMSE per joint
+      - id: SW-SIM-11
+        name: Simple Control Task Stability (Standing/Hovering)
+        method: Verify control stability
+        automation: auto
+        levels:
+          0: Unstable
+          2: All match
+
+  - id: sw_security
+    name: Security
+    section: Software
+    items:
+      - id: SW-SEC-01
+        must_have: true
+        must_have_level: 1
+        name: Secure Boot
+        method: System boots only authenticated bootloader, kernel, and firmware images
+        automation: auto
+        levels:
+          0: Secure Boot not enabled
+          1: Secure Boot enabled but not validated across the full boot chain
+          2: Secure Boot enabled and full boot chain validation passes
+      - id: SW-SEC-02
+        name: Rollback Protection
+        method: Attempt to install or boot an older bootloader, kernel, or system image
+        automation: semi
+        levels:
+          0: Older image can boot
+          1: Rollback is partially blocked but not consistently enforced
+          2: Rollback protection is enforced for protected boot components
+      - id: SW-SEC-03
+        name: Secure Storage for Keys and Sensitive Data
+        method: Keys, certificates, and sensitive configuration are not stored as plain files on the rootfs
+        automation: auto
+        levels:
+          0: Keys stored in plain files
+          1: Some keys use protected storage
+          2: Required keys use secure storage or TEE-backed storage
+      - id: SW-SEC-04
+        name: Disk Encryption
+        method: Data at rest is protected using disk encryption for required partitions
+        automation: auto
+        levels:
+          0: No disk encryption
+          1: Only selected data folder or partition is encrypted
+          2: Required rootfs or data partitions are encrypted and unlock correctly during boot
+      - id: SW-SEC-05
+        name: Default Account and Debug Lockdown
+        method: Production image blocks default credentials and unnecessary debug access
+        automation: auto
+        levels:
+          0: Default passwords or unrestricted debug access exist
+          1: Some accounts or debug interfaces are restricted
+          2: No default passwords, debug access locked down, admin access controlled
+      - id: SW-SEC-06
+        name: Security Logging
+        method: Login attempts, admin actions, Secure Boot status, OTA security events
+        automation: auto
+        levels:
+          0: No security logs
+          1: Basic logs only
+          2: Required security events are logged and retained for debugging and audit
+
+  - id: sw_ota
+    name: Over-the-Air (OTA) Update
+    section: Software
+    items:
+      - id: SW-OTA-01
+        name: Image-Based OTA
+        method: Robot can update JetPack, BSP, bootloader, kernel, rootfs, and system packages through OTA
+        automation: semi
+        levels:
+          0: No OTA support
+          1: Partial support
+          2: Full image-based OTA supported
+      - id: SW-OTA-02
+        name: Rootfs A/B and Recovery
+        method: Test OTA with rootfs A/B and interrupted update
+        automation: semi
+        levels:
+          0: OTA failure may brick device
+          1: Manual recovery required
+          2: Recovery flow verified
+      - id: SW-OTA-03
+        name: OTA with Secure Boot Enabled
+        method: Updated system boots only authenticated code
+        automation: semi
+        levels:
+          0: Not supported
+          2: Works with Secure Boot enabled
+      - id: SW-OTA-04
+        name: Secure OTA Payload
+        method: OTA payload is authenticated before installation
+        automation: auto
+        levels:
+          0: No payload security
+          2: Signature validation and encryption supported
+      - id: SW-OTA-05
+        name: OTA Logging and Audit Records
+        method: Version, payload ID, result, trigger source, and failure reason are retained
+        automation: auto
+        levels:
+          0: No logs
+          1: Failure logs only
+          2: Full audit logs retained
+      - id: SW-OTA-06
+        name: Post-Update Validation (Smoke Test)
+        method: JetPack, CUDA, TensorRT, Isaac ROS, cameras, network, and robot SDK pass validation after OTA reboot
+        automation: auto
+        levels:
+          0: No validation
+          1: Boot check only
+          2: Full smoke test passes
+
+  # ─────────────────── NON-TECHNICAL (Tier 1 only) ───────────────────
+  - id: nt_commercial
+    name: General Commercial Accessibility
+    section: Non-Technical
+    tier1_only: true
+    items:
+      - id: NT-CA-01
+        name: Developer-Ready Distribution and Availability
+        method: Review pricing model, sales channels, procurement workflow; verify shipping coverage, regional entity presence, and localization
+        automation: manual
+        levels:
+          0: No accessible procurement path or availability
+          1: Partial (pricing or availability gaps)
+          2: Published developer-kit pricing, accessible procurement path, regional/global availability with local-language support and in-country warranty
+
+  - id: nt_supply_chain
+    name: Supply-Chain
+    section: Non-Technical
+    tier1_only: true
+    items:
+      - id: NT-SC-01
+        name: Manufacturing Scale and Sustained Supply
+        method: Review production capacity plans and facility certifications; audit supplier agreements and second-source coverage; verify replacement-parts strategy
+        automation: manual
+        levels:
+          0: Cannot manufacture at scale
+          1: Partial (capacity or parts commitments incomplete)
+          2: Documented monthly capacity and ramp curves, replacement-parts commitment, diversified qualified suppliers
+
+  - id: nt_compliance
+    name: Compliance Posture
+    section: Non-Technical
+    tier1_only: true
+    items:
+      - id: NT-CP-01
+        name: Security Posture and Technical Min Spec
+        method: Conduct security audit of firmware, boot chain, and access controls
+        automation: manual
+        levels:
+          0: Unauthorized access vectors found
+          1: Minor findings with remediation plan
+          2: No unauthorized access vectors — backdoor-free architecture confirmed
+
+  - id: nt_support
+    name: Support Structure
+    section: Non-Technical
+    tier1_only: true
+    items:
+      - id: NT-SS-01
+        name: Ongoing Support Across HW/SW/Logistics
+        method: Review support organization, staffing, technical competency; audit ticket-handling infrastructure and escalation procedures
+        automation: manual
+        levels:
+          0: No defined support structure
+          1: Partial (channels or SLAs missing)
+          2: Defined support channels (portal/forum/email), response-time SLAs by severity, clear escalation path
+
+  - id: nt_documentation
+    name: Documentation
+    section: Non-Technical
+    tier1_only: true
+    items:
+      - id: NT-DOC-01
+        name: Developer-Ready Documentation
+        method: Review documentation completeness against GR00T integration workflow; validate accuracy and version currency
+        automation: manual
+        levels:
+          0: Documentation missing or inadequate
+          1: Partial (some guides missing or outdated)
+          2: Published quick-start, hardware integration manual, API reference, troubleshooting runbook, and searchable public portal with sample code
