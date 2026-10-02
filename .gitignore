@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Installed copies of skills (source of truth is skills/; run skills/install.sh).
+# Covers the skill directories of common coding agents.
+.agents/skills/
+.claude/skills/
+.cursor/skills/
+.codex/skills/
+
+# Test run artifacts (raw logs/captures from test execution; keep results.yaml and reports)
+robots/*/tests/output/
+*.log
+
+# Evidence media (photos/videos uploaded via the dashboard — sync to cloud storage
+# instead of git; the folder tree is robots/<name>/results/media/<ITEM-ID>/)
+robots/*/results/media/

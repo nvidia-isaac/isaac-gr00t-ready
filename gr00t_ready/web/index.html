@@ -1,0 +1,323 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GR00T-Ready Test Board</title>
+<style>
+  :root {
+    --bg: #0f1216; --panel: #171c22; --panel2: #1e252d; --text: #e6ebf0;
+    --muted: #8b98a5; --border: #2a333d;
+    --todo: #8b98a5; --progress: #e2b93b; --blocked: #e05d44;
+    --done: #4cc38a; --na: #5b6773; --skipped: #6b7a99; --accent: #76b900; /* NVIDIA green */
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--text); }
+  header { padding: 20px 28px 12px; border-bottom: 1px solid var(--border); }
+  .head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .score-badge { text-align: right; background: var(--panel); border: 1px solid var(--border);
+                 border-radius: 10px; padding: 8px 16px; min-width: 130px; }
+  .score-badge .pts { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .score-badge .pts .of { color: var(--muted); font-weight: 400; font-size: 15px; }
+  .score-badge .cap { color: var(--muted); font-size: 11px; text-transform: uppercase;
+                      letter-spacing: .06em; margin-top: 2px; }
+  h1 { margin: 0 0 4px; font-size: 20px; }
+  h1 .robot { color: var(--accent); }
+  .meta { color: var(--muted); font-size: 12px; }
+  .progress-wrap { margin: 14px 0 6px; display: flex; align-items: center; gap: 12px; }
+  .bar { flex: 1; height: 10px; background: var(--panel2); border-radius: 5px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .4s; }
+  .pct { font-weight: 600; min-width: 110px; text-align: right; }
+  .pills { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .pill { padding: 4px 10px; border-radius: 999px; background: var(--panel2);
+          border: 1px solid var(--border); cursor: pointer; user-select: none; font-size: 12px; }
+  .pill.active { border-color: var(--accent); }
+  .pill .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  main { padding: 18px 28px 60px; }
+  section.cat { margin-bottom: 18px; background: var(--panel); border: 1px solid var(--border);
+                border-radius: 8px; overflow: hidden; }
+  .cat-head { display: flex; justify-content: space-between; align-items: center;
+              padding: 10px 14px; cursor: pointer; }
+  .cat-head:hover { background: var(--panel2); }
+  .cat-title { font-weight: 600; }
+  .cat-title .sec { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .cat-stats { font-size: 12px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 14px; border-top: 1px solid var(--border);
+           vertical-align: top; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  td.status { white-space: nowrap; width: 110px; }
+  td.id { white-space: nowrap; color: var(--muted); width: 90px; font-family: ui-monospace, monospace; font-size: 12px; }
+  td.score { white-space: nowrap; width: 60px; font-weight: 600; }
+  td.mode { width: 60px; color: var(--muted); }
+  td.detail { color: var(--muted); font-size: 12px; max-width: 420px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px;
+           border-radius: 999px; font-size: 12px; }
+  .badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .s-todo .dot { background: var(--todo); }      .s-todo { color: var(--todo); }
+  .s-in_progress .dot { background: var(--progress); } .s-in_progress { color: var(--progress); }
+  .s-blocked .dot { background: var(--blocked); }  .s-blocked { color: var(--blocked); }
+  .s-done .dot { background: var(--done); }      .s-done { color: var(--done); }
+  .s-na .dot { background: var(--na); }          .s-na { color: var(--na); }
+  .s-skipped .dot { background: var(--skipped); }  .s-skipped { color: var(--skipped); }
+  .score.good { color: var(--done); } .score.mid { color: var(--progress); } .score.bad { color: var(--blocked); }
+  .rubric { color: var(--muted); font-size: 11px; margin-top: 3px; }
+  .hidden { display: none; }
+  td.media { width: 170px; }
+  .tip { position: relative; cursor: help; }
+  .tip .tooltip { display: none; position: absolute; z-index: 10; left: 0; top: 100%;
+                  margin-top: 6px; width: 380px; background: var(--panel2);
+                  border: 1px solid var(--accent); border-radius: 8px; padding: 10px 12px;
+                  box-shadow: 0 8px 24px rgba(0,0,0,.5); font-size: 12px; }
+  .tip:hover .tooltip { display: block; }
+  .tooltip .t-method { color: var(--muted); margin-bottom: 8px; }
+  .tooltip .t-level { display: flex; gap: 8px; padding: 3px 0; border-top: 1px solid var(--border); }
+  .tooltip .t-score { flex: 0 0 28px; font-weight: 700; font-family: ui-monospace, monospace; }
+  .tooltip .t-level.l0 .t-score { color: var(--blocked); }
+  .tooltip .t-level.l1 .t-score { color: var(--progress); }
+  .tooltip .t-level.l2 .t-score { color: var(--done); }
+  .tooltip .t-extra { color: var(--muted); margin-top: 8px; font-style: italic; }
+  .media-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .media-list img { max-height: 48px; max-width: 72px; border-radius: 4px;
+                    border: 1px solid var(--border); display: block; }
+  .media-list a { color: var(--accent); text-decoration: none; font-size: 12px; }
+  .media-list a.file::before { content: "🎞 "; }
+  .detail a.outfile { color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .detail a.outfile::before { content: "📄 "; }
+  .upload-btn { display: inline-block; padding: 2px 8px; border: 1px dashed var(--border);
+                border-radius: 6px; color: var(--muted); cursor: pointer; font-size: 12px; }
+  .upload-btn:hover { color: var(--text); border-color: var(--accent); }
+  .upload-btn.busy { opacity: .5; pointer-events: none; }
+  #error { background: #3a1f1f; color: #f2b8b5; padding: 8px 28px; display: none; }
+  .score-badge.mh-fail { border-color: var(--blocked); }
+  .score-badge.mh-fail .pts { color: var(--blocked); }
+  .mh-x { color: var(--blocked); font-weight: 700; font-size: 13px; }
+  .mh-pill { border-color: #6a5a1a; }
+  .mh-pill.active { border-color: var(--accent); }
+  .mh-tag { font-size: 11px; margin-right: 2px; }
+  .mh-tag-ok { filter: saturate(1.2); }
+  .mh-tag-x { color: var(--blocked); font-weight: 700; }
+  .mh-tag-p { opacity: 0.5; }
+  tr.mh-row td { background: rgba(226,185,59,0.05); }
+  tr.mh-row-fail td { background: rgba(224,93,68,0.12); box-shadow: inset 3px 0 0 var(--blocked); }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-row">
+    <div>
+      <h1>GR00T-Ready — <span class="robot" id="robot">…</span></h1>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <div class="score-badge" id="mh-badge" title="Must-have items that reached their required level. Any unmet must-have blocks certification.">
+        <div class="pts" id="mh-pts">—</div>
+        <div class="cap">must-haves met</div>
+      </div>
+      <div class="score-badge">
+        <div class="pts" id="score-pts">—</div>
+        <div class="cap">score</div>
+      </div>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="bar"><div id="bar"></div></div>
+    <div class="pct" id="pct"></div>
+  </div>
+  <div class="pills" id="filters"></div>
+</header>
+<div id="error"></div>
+<main id="board"></main>
+<script>
+const STATUSES = {
+  todo:        {label: "To Do"},
+  in_progress: {label: "In Progress"},
+  blocked:     {label: "Blocked"},
+  done:        {label: "Done"},
+  na:          {label: "Invalid"},
+  skipped:     {label: "Skipped"},
+};
+let filter = null;          // null = show all
+let collapsed = new Set();  // category ids the user collapsed
+
+function badge(status) {
+  const s = STATUSES[status];
+  return `<span class="badge s-${status}"><span class="dot"></span>${s.label}</span>`;
+}
+
+function mhTag(i) {
+  if (!i.must_have) return "";
+  const req = i.must_have_level;
+  if (i.must_have_met === false)
+    return `<span class="mh-tag mh-tag-x" title="MUST-HAVE not met — needs level ${req}, blocks certification">⭐✗</span> `;
+  if (i.must_have_met === true)
+    return `<span class="mh-tag mh-tag-ok" title="Must-have (min level ${req}) — met">⭐</span> `;
+  return `<span class="mh-tag mh-tag-p" title="Must-have (min level ${req}) — not yet assessed">⭐</span> `;
+}
+
+function scoreCell(item) {
+  if (item.status === "na") return `<td class="score">invalid</td>`;
+  if (item.status === "skipped") return `<td class="score">skipped</td>`;
+  if (item.score === null || item.score === undefined || item.status !== "done")
+    return `<td class="score"></td>`;
+  const cls = item.score === 0 ? "bad" : (item.score === item.max ? "good" : "mid");
+  return `<td class="score ${cls}">${item.score}/${item.max}</td>`;
+}
+
+const IMG_EXT = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function tooltip(item) {
+  const levels = Object.entries(item.levels)
+    .sort((a, b) => a[0] - b[0])
+    .map(([k, v]) => `<div class="t-level l${k}"><span class="t-score">${k}</span><span>${esc(v)}</span></div>`)
+    .join("");
+  const extra = item.conditional
+    ? `<div class="t-extra">Conditional item — scored invalid (excluded from totals) if the robot lacks this hardware.</div>` : "";
+  return `<div class="tooltip">
+    <div class="t-method"><b>How to evaluate:</b> ${esc(item.method)}</div>
+    ${levels}${extra}
+  </div>`;
+}
+
+function mediaCell(item) {
+  const files = (item.media || []).map(f => {
+    const url = `/media/${item.id}/${encodeURIComponent(f)}`;
+    return IMG_EXT.test(f)
+      ? `<a href="${url}" target="_blank" title="${f}"><img src="${url}" loading="lazy"></a>`
+      : `<a href="${url}" target="_blank" class="file" title="${f}">${f.length > 18 ? f.slice(0, 15) + "…" : f}</a>`;
+  }).join("");
+  return `<td class="media"><div class="media-list">${files}
+    <label class="upload-btn" id="up-${item.id}">📎 add
+      <input type="file" multiple accept="image/*,video/*" class="hidden"
+             onchange="uploadMedia('${item.id}', this)">
+    </label></div></td>`;
+}
+
+function uploadPassword(forceAsk) {
+  let pw = sessionStorage.getItem("uploadPw");
+  if (!pw || forceAsk) {
+    pw = prompt("Upload password (shown in the serve terminal):");
+    if (pw) sessionStorage.setItem("uploadPw", pw);
+  }
+  return pw;
+}
+
+async function uploadMedia(itemId, input) {
+  const pw = uploadPassword(false);
+  if (!pw) return;
+  const btn = document.getElementById("up-" + itemId);
+  btn.classList.add("busy");
+  btn.firstChild.textContent = "⏳ uploading… ";
+  try {
+    for (const file of input.files) {
+      const res = await fetch(
+        `/api/upload?item=${itemId}&name=${encodeURIComponent(file.name)}`,
+        {method: "POST", body: file, headers: {"X-Upload-Password": pw}});
+      if (res.status === 401) {
+        sessionStorage.removeItem("uploadPw");
+        throw new Error("wrong upload password — click 📎 again to retry");
+      }
+      const out = await res.json();
+      if (out.error) throw new Error(out.error);
+    }
+  } catch (e) {
+    alert("Upload failed: " + e.message);
+  }
+  refresh();
+}
+
+function render(data) {
+  document.getElementById("robot").textContent = data.robot;
+  document.getElementById("meta").textContent =
+    `evaluation v${data.evaluation_version} · tier: ${data.tier} · ${data.date} · auto-refreshing`;
+  const sp = data.score_possible || 0;
+  const spct = sp ? (100 * data.score_achieved / sp).toFixed(1) : "0";
+  document.getElementById("score-pts").innerHTML =
+    `${data.score_achieved}<span class="of"> / ${sp} · ${spct}%</span>`;
+  // must-have KPI: met/total, red if any unmet
+  const mh = data.must_have || {total:0, met:0, unmet:[], pending:[]};
+  const mhEl = document.getElementById("mh-pts");
+  const mhBad = mhEl.parentElement;
+  mhBad.classList.toggle("mh-fail", mh.unmet.length > 0);
+  mhEl.innerHTML = `${mh.met}<span class="of"> / ${mh.total}</span>` +
+    (mh.unmet.length ? `<span class="mh-x"> · ${mh.unmet.length} unmet</span>`
+      : (mh.pending.length ? `<span class="of"> · ${mh.pending.length} pending</span>` : ""));
+  const pct = data.total ? Math.round(100 * data.finished / data.total) : 0;
+  document.getElementById("bar").style.width = pct + "%";
+  document.getElementById("pct").textContent = `${data.finished}/${data.total} (${pct}%)`;
+
+  document.getElementById("filters").innerHTML =
+    `<span class="pill ${filter===null?"active":""}" onclick="setFilter(null)">All ${data.total}</span>` +
+    Object.entries(STATUSES).map(([k, s]) =>
+      `<span class="pill ${filter===k?"active":""}" onclick="setFilter('${k}')">` +
+      `<span class="dot" style="background: var(--${k==='in_progress'?'progress':k})"></span>` +
+      `${s.label} ${data.counts[k]}</span>`).join("") +
+    `<span class="pill mh-pill ${filter==='must_have'?"active":""}" onclick="setFilter('must_have')">` +
+    `⭐ Must-have ${mh.met}/${mh.total}${mh.unmet.length?` · ${mh.unmet.length}✗`:''}</span>`;
+
+  document.getElementById("board").innerHTML = data.categories.map(cat => {
+    const items = cat.items.filter(i =>
+      filter === 'must_have' ? i.must_have : (!filter || i.status === filter));
+    if (!items.length) return "";
+    const done = cat.items.filter(i => ["done","na","skipped"].includes(i.status)).length;
+    const isCollapsed = collapsed.has(cat.id);
+    const rows = items.map(i => `
+      <tr class="${i.must_have ? (i.must_have_met === false ? 'mh-row-fail' : 'mh-row') : ''}">
+        <td class="status">${badge(i.status)}</td>
+        <td class="id">${i.id}</td>
+        <td class="tip">${mhTag(i)}${esc(i.name)}${tooltip(i)}</td>
+        <td class="mode">${i.automation}</td>
+        ${scoreCell(i)}
+        <td class="detail">${esc([i.evidence, i.notes].filter(Boolean).join(" — "))}
+          ${(i.outputs || []).map(f =>
+            `<br><a class="outfile" href="/output/${encodeURIComponent(f)}" target="_blank">${esc(f)}</a>`).join(" ")}</td>
+        ${mediaCell(i)}
+      </tr>`).join("");
+    return `<section class="cat">
+      <div class="cat-head" onclick="toggleCat('${cat.id}')">
+        <div class="cat-title">${cat.name}<span class="sec">${cat.section}</span></div>
+        <div class="cat-stats">${done}/${cat.items.length} finished ${isCollapsed ? "▸" : "▾"}</div>
+      </div>
+      <table class="${isCollapsed ? "hidden" : ""}">
+        <tr><th>Status</th><th>ID</th><th>Item</th><th>Mode</th><th>Score</th><th>Evidence / Notes</th><th>Media</th></tr>
+        ${rows}
+      </table>
+    </section>`;
+  }).join("");
+}
+
+function setFilter(f) { filter = f; refresh(); }
+function toggleCat(id) {
+  collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id);
+  refresh();
+}
+
+let last = null;
+async function refresh() {
+  try {
+    const res = await fetch("/api/board");
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById("error").style.display = "none";
+    last = data;
+    render(data);
+  } catch (e) {
+    const el = document.getElementById("error");
+    el.textContent = "Failed to load board: " + e.message;
+    el.style.display = "block";
+  }
+}
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+# Robot profile — copy robots/_template/ to robots/<robot_name>/ and fill in.
+# This file gives the agent (and test scripts) everything needed to generate and run tests.
+
+name: _template
+vendor: ""
+model: ""
+tier: official            # official | self-serve
+
+# How to reach the robot's onboard compute (Jetson Thor)
+connection:
+  ssh_host: ""            # e.g. 192.168.1.100
+  ssh_user: ""
+  ssh_port: 22
+  notes: ""               # jump host, VPN, credentials location, etc.
+
+# Documentation and SDK locations live in sources.yaml (local paths, websites,
+# git repos). The agent reads that manifest to learn the robot before
+# generating tests.
+sdk:
+  language: ""            # python / c++ / ros2 packages ...
+  ros2_distro: ""         # e.g. humble
+  notes: ""
+
+# Vendor-claimed specs used as pass/fail references by generated tests.
+# Fill from the datasheet; tests compare measured values against these.
+specs:
+  jetpack_version: ""
+  ram_gb: null
+  nvme_tb: null
+  joint_count: null
+  control_frequency_hz: null
+  arm_payload_kg: null
+  dual_arm_payload_kg: null
+  hand_type: ""           # dexterous hand model, or "gripper"
+  has_tactile: false
+  has_vision_tactile: false
+  has_ft_sensor: false
+  cameras: []             # e.g. [{name: head_stereo, resolution: 1920x1080, fps: 30}]
+  imu_output_hz: null
+  wifi: true
+  bluetooth: true
+  qsfp: false
