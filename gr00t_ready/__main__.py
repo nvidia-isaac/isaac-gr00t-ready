@@ -61,7 +61,7 @@ def cmd_checklist(args) -> int:
         return 1
     lines = [
         f"robot: {robot_dir.name}",
-        "tier: official          # official | self-serve",
+        "tier: self-serve        # self-serve | official",
         f"evaluation_version: {__version__}",
         "date: YYYY-MM-DD",
         "evaluator: ",

@@ -1,13 +1,14 @@
 # GR00T-Ready evaluation criteria — machine-readable form of GR00T_Ready_Evaluation_Framework.md
 #
-# This file is generated from the markdown framework and is the source of truth for
-# automated test generation, scoring, and reporting. If the markdown changes, this
-# file must be regenerated/updated to match.
+# This file is derived from the markdown framework and is the source of truth for
+# test preparation, scoring, and reporting. If the markdown changes, update this
+# file to match.
 #
 # Item fields:
 #   id          stable identifier used in test cases and results files
 #   name        short item name
 #   method      how to evaluate (from the "Method / Metric" column)
+#   evidence    artifacts required to document the evaluation results and support the assigned score
 #   levels      score -> criteria text. Highest key = max achievable score for the item.
 #   automation  auto   = fully scriptable on the robot/host
 #               semi   = scriptable but needs physical setup or a human in the loop
@@ -34,6 +35,7 @@ categories:
         must_have_level: 1
         name: Emergency Stop (E-stop)
         method: Dual-redundancy confirmed
+        evidence: "Video of both stop paths + wiring diagram. Optional additional evidence: functional-safety assessment or certification documentation identifying the applicable standard, claimed level, and covered E-stop function"
         automation: manual
         levels:
           0: No support
@@ -46,6 +48,7 @@ categories:
         method: >-
           Operational integrity confirmed: exercise every external port and measure
           sustained throughput per port type
+        evidence: "Port inventory + per-port throughput log"
         automation: auto
         levels:
           0: No support
@@ -55,6 +58,7 @@ categories:
       - id: HW-SI-03
         name: Integrated Audio (Mic & Speaker)
         method: Confirm functionality
+        evidence: "Captured microphone samples + audio or video recording of speaker output"
         automation: semi
         levels:
           0: No support
@@ -65,6 +69,7 @@ categories:
         must_have_level: 1
         name: Debug Mode Connectivity
         method: Confirm successful connection
+        evidence: "Debug session log listing every reachable device"
         automation: semi
         levels:
           0: No support
@@ -73,6 +78,7 @@ categories:
       - id: HW-SI-05
         name: Remote/App Control
         method: Confirm functionality
+        evidence: "Demo video of each control path"
         automation: manual
         levels:
           0: No support
@@ -83,6 +89,7 @@ categories:
         must_have_level: 1
         name: Power Supply Output
         method: Verify against manufacturer specs (voltage, current, and power)
+        evidence: "PSU datasheet + measured V/I/P in both modes"
         automation: semi
         levels:
           0: No support
@@ -96,6 +103,7 @@ categories:
       - id: HW-OC-01
         name: JetPack Release and Software Stack
         method: Verify the JetPack release, confirm the system boots to a normal operational state, and validate that all required libraries are installed and load correctly
+        evidence: "L4T release output (`cat /etc/nv_tegra_release`) + corresponding JetPack version + current-boot journal (`sudo journalctl -b 0 --no-pager`) + library check"
         automation: auto
         levels:
           0: Does not boot or required libraries missing
@@ -108,6 +116,7 @@ categories:
           a memory-bandwidth benchmark in the platform's max sustained power mode.
           Compare against the reference figures for the same benchmark on the Jetson
           Thor reference platform, not against marketing peak numbers
+        evidence: "Benchmark report vs Thor spec sheet"
         automation: auto
         levels:
           0: Below 85% of the reference benchmark result, or throughput unstable
@@ -118,6 +127,7 @@ categories:
         method: >-
           Continuous stability in the platform's maximum sustained power mode (MAXN or
           the vendor-named equivalent); record the mode used
+        evidence: "Continuous tegrastats log (`sudo tegrastats --interval 1000 --logfile <output-file>`)"
         automation: auto
         levels:
           0: Fails endurance check
@@ -127,6 +137,7 @@ categories:
         method: >-
           No throttling under inference load in the platform's maximum sustained power
           mode (MAXN or the vendor-named equivalent); record the mode used
+        evidence: "tegrastats log during inference load + kernel journal (`sudo journalctl -k -b 0 --no-pager`) covering the test interval + recorded workload and power-mode configuration"
         automation: auto
         levels:
           0: Throttling or overcurrent warnings observed
@@ -134,6 +145,7 @@ categories:
       - id: HW-OC-05
         name: RAM Capacity
         method: Capacity verified to be at least that of Jetson Thor
+        evidence: "System memory report (`free -b`), including the Mem total in bytes"
         automation: auto
         levels:
           0: Less than 128 GB
@@ -141,6 +153,7 @@ categories:
       - id: HW-OC-06
         name: NVMe Storage Capacity and Throughput
         method: Format EXT4 on NVMe storage (>1 TB); stress test runs for >4 hours with no failures
+        evidence: "Filesystem type and capacity output (`lsblk -b -o NAME,SIZE,FSTYPE,MOUNTPOINTS`) + fio stress-test report, including job configuration and runtime"
         automation: auto
         levels:
           0: No support
@@ -149,6 +162,7 @@ categories:
       - id: HW-OC-07
         name: PTP (Precision Time Protocol)
         method: PTP stability verified
+        evidence: "ptp4l /phc2sys offset log"
         automation: auto
         levels:
           0: No support
@@ -160,6 +174,7 @@ categories:
           All fitted modules (Wi-Fi, Bluetooth, QSFP) verified enabled and
           functioning; modules not fitted are excluded from the assessment and named
           in the result note
+        evidence: "Wi-Fi status (`nmcli device status`, `iw dev`) + Bluetooth controller status (`bluetoothctl list`, `bluetoothctl show`) + fitted QSFP interface/link status (`ethtool <interface>`) and transceiver information (`ethtool -m <interface>`, where supported); identify modules not fitted"
         automation: auto
         levels:
           0: No wireless connectivity functional
@@ -175,6 +190,7 @@ categories:
         method: >-
           Verify the data transfer of every USB port and compare the usable count
           against the peripherals the platform requires; record both numbers
+        evidence: "Vendor physical port map + required-peripheral list + USB topology output (`lsusb -t`) with peripherals connected"
         automation: auto
         levels:
           0: Too few usable ports for the required peripherals
@@ -183,6 +199,7 @@ categories:
       - id: HW-SN-02
         name: USB Bandwidth and Stability
         method: Max throughput, zero dropouts under load
+        evidence: "Vendor per-port bandwidth specifications + USB topology and negotiated link speeds (`lsusb -t`)"
         automation: auto
         levels:
           0: No support
@@ -193,6 +210,7 @@ categories:
         must_have_level: 1
         name: Head Camera Stability at Max Resolution
         method: Long-duration stability at max resolution
+        evidence: "Continuous stream (bag) + frame-drop stats"
         automation: auto
         levels:
           0: Unstable
@@ -203,6 +221,7 @@ categories:
         must_have_level: 1
         name: Head Camera FoV for Manipulation
         method: Set positions for head joints and check the FoV of camera
+        evidence: "Vendor FoV specifications + sample frames at commanded head positions"
         automation: semi
         levels:
           0: No support
@@ -218,6 +237,7 @@ categories:
         must_have_level: 1
         name: Read and Command Joint States
         method: Compare commanded vs. read values
+        evidence: "Datasheet specifications for supported control types + timestamped joint-state capture (bag)"
         automation: auto
         levels:
           0: No support
@@ -226,6 +246,7 @@ categories:
       - id: HW-AC-02
         name: Joint Angle Range Limits
         method: Verify limits against manufacturer specs
+        evidence: "Measured range table vs datasheet"
         automation: semi
         levels:
           0: Outside tolerance
@@ -237,6 +258,7 @@ categories:
           Commanded step response at the vendor's recommended gains; record the step
           size and gain configuration with the result. Measure settling time to within
           band and steady-state error in absolute joint units, plus any overshoot
+        evidence: "Step-response capture (bag) + plots + table of settling time, overshoot, and steady-state error"
         automation: auto
         levels:
           0: Overshoot present, or settling beyond 300 ms, or steady-state error
@@ -250,6 +272,7 @@ categories:
         must_have_level: 1
         name: Single-Arm and Dual-Arm Payload Limits
         method: Verify max payload against specs
+        evidence: "Load-test video + measured table vs payload datasheet specs"
         automation: manual
         levels:
           0: Neither matches
@@ -267,6 +290,7 @@ categories:
           on each fitted interface. Level 2 applies only where a 10 GbE-or-faster
           interface is fitted; on 1 GbE-only platforms level 1 is the maximum
           attainable and the result note must record the fitment
+        evidence: "Throughput results with all streams active"
         automation: auto
         levels:
           0: Insufficient for the platform's sensor streams
@@ -275,6 +299,7 @@ categories:
       - id: HW-NW-02
         name: Ethernet Connectivity
         method: Verify with lab Ethernet; speedtest-cli reports > 30M
+        evidence: "speedtest-cli output"
         automation: auto
         levels:
           0: Cannot connect
@@ -283,6 +308,7 @@ categories:
       - id: HW-NW-03
         name: Wi-Fi Connectivity
         method: Verify with lab Wi-Fi; speedtest-cli reports > 30M
+        evidence: "speedtest-cli output"
         automation: auto
         levels:
           0: Cannot connect
@@ -299,6 +325,7 @@ categories:
           Verify full operational range against specs for each independently-actuated
           joint, measured in absolute joint units. Enumerate coupled or underactuated
           joints in the result note and assess them for presence of motion only
+        evidence: "Joint sweep capture (bag) vs spec table"
         automation: semi
         levels:
           0: Any independently-actuated joint outside 5% of its specified range
@@ -307,6 +334,7 @@ categories:
       - id: HW-DH-02
         name: Grasping Force/Torque and Payload Limits
         method: Verify max limits against specs
+        evidence: "Force-gauge measurements + grasp video"
         automation: manual
         levels:
           0: Neither matches
@@ -315,6 +343,7 @@ categories:
       - id: HW-DH-03
         name: Hand Control Modes and Configurations
         method: Verify every supported mode and config
+        evidence: "Per-mode test log"
         automation: semi
         levels:
           0: No support
@@ -326,6 +355,7 @@ categories:
           Verify max resolution / frequency against specs. Use the spatial branch that
           matches the sensor class: taxel pitch for taxel arrays, image resolution and
           FPS for vision-based tactile. Record which branch was used
+        evidence: "Datasheet + measured readings (bag)"
         automation: semi
         conditional: true
         levels:
@@ -349,6 +379,7 @@ categories:
           Isaac Teleop, GR00T, and LEAPP (Lightweight Export Annotations for Policy
           Pipelines, https://github.com/nvidia-isaac/leapp — requires Python 3.10+ and
           PyTorch 2.6+; verify with `python -c "import leapp"`)
+        evidence: "Install log"
         automation: auto
         levels:
           0: Missing required packages
@@ -356,6 +387,7 @@ categories:
       - id: SW-OS-02
         name: Reference Application/Policy Deployment
         method: Replay trajectories with ROS2 controller
+        evidence: "Build log + replay trace (bag) + error plot"
         automation: auto
         levels:
           0: Does not build/deploy
@@ -363,6 +395,7 @@ categories:
       - id: SW-OS-03
         name: Storage Throughput (IOPS) for Data Logging
         method: Max IOPS meets needs for all concurrent streams
+        evidence: "IOPS results while all streams record"
         automation: auto
         levels:
           0: Insufficient
@@ -371,6 +404,7 @@ categories:
       - id: SW-OS-04
         name: SM Count Reporting
         method: Verify SM reporting
+        evidence: "deviceQuery /system report"
         automation: auto
         levels:
           0: Incorrect
@@ -389,6 +423,7 @@ categories:
           than the level being assessed; record the source and its resolution. Where
           the available timestamp is quantized at or above a level's threshold, that
           level cannot be assessed and the next lower level is the maximum attainable
+        evidence: "Synchronized capture (bag) + jitter histogram"
         automation: auto
         levels:
           0: Not synchronized
@@ -397,6 +432,7 @@ categories:
       - id: SW-IMU-02
         name: Stability and Noise Characteristics
         method: Verify max stability / low noise
+        evidence: "Static capture (bag) + Allan-variance plot"
         automation: auto
         levels:
           0: Outside tolerance
@@ -405,6 +441,7 @@ categories:
       - id: SW-IMU-03
         name: Time Sync Accuracy/Jitter to Control Loop
         method: Verify max accuracy, minimal jitter
+        evidence: "Alignment measurement (bag)"
         automation: auto
         levels:
           0: Does not match
@@ -412,6 +449,7 @@ categories:
       - id: SW-IMU-04
         name: Intrinsic Error Correction (Bias, Scale Factor)
         method: Verify max tolerance compliance
+        evidence: "Calibration report"
         automation: semi
         levels:
           0: Does not match
@@ -419,6 +457,7 @@ categories:
       - id: SW-IMU-05
         name: Long-Term Stability (Zero-Drift/Bias Gradient)
         method: Robot at rest >= 1 hour; measure worst-axis fused-attitude (rpy) drift in °/h
+        evidence: "≥1 h static drift capture (bag)"
         automation: auto
         levels:
           0: Attitude drift 1 °/h or more
@@ -430,6 +469,7 @@ categories:
           Verify IMU output frequency and stability at an on-robot subscriber, so
           transport losses off the robot are excluded. Where the vendor publishes no
           rate specification, record that and assess against level 1 only
+        evidence: "Rate capture (bag) + loss count"
         automation: auto
         levels:
           0: Below 100 Hz or unstable
@@ -445,6 +485,7 @@ categories:
         conditional: true  # platform may lack F/T sensors
         name: Stable Low-Noise 6-DOF Readings
         method: Verify max stability / low noise
+        evidence: "Known-load captures (bag) + error calc"
         automation: semi
         levels:
           0: Outside tolerance
@@ -454,6 +495,7 @@ categories:
         conditional: true  # platform may lack F/T sensors
         name: Zero-Drift When Unloaded
         method: Verify zero-drift
+        evidence: "Unloaded drift capture (bag)"
         automation: auto
         levels:
           0: Outside tolerance
@@ -463,6 +505,7 @@ categories:
         conditional: true  # platform may lack F/T sensors
         name: Response Linearity Under Known Loads
         method: Verify max linearity
+        evidence: "Calibration curve"
         automation: semi
         levels:
           0: Does not match
@@ -471,6 +514,7 @@ categories:
         conditional: true  # platform may lack F/T sensors
         name: F/T Data Output Frequency
         method: Test the frequency of data output
+        evidence: "Rate capture (bag)"
         automation: auto
         levels:
           0: 1000 Hz or below
@@ -482,6 +526,7 @@ categories:
       - id: SW-TS-01
         name: All Taxels Report Correctly
         method: Verify all taxels functional
+        evidence: "Taxel map readout (bag), per-taxel pass/fail"
         automation: auto
         levels:
           0: Dead or stuck taxels affecting more than 5% of the array
@@ -490,6 +535,7 @@ categories:
       - id: SW-TS-02
         name: Responsiveness and Force-Reading Linearity
         method: Verify max linearity and responsiveness
+        evidence: "Probe test data (bag)"
         automation: semi
         levels:
           0: Non-monotonic response, or outside the specified linearity tolerance
@@ -498,6 +544,7 @@ categories:
       - id: SW-TS-03
         name: Persistence and Noise Characteristics
         method: Verify max stability / low noise
+        evidence: "Idle capture (bag) + persistence log"
         automation: auto
         levels:
           0: Drift or noise that prevents contact detection
@@ -506,6 +553,7 @@ categories:
       - id: SW-TS-04
         name: Vision-Based Tactile Data Stream Bandwidth
         method: Verify max resolution / FPS supported against the specs
+        evidence: "Resolution /FPS /bandwidth trace"
         automation: auto
         conditional: true
         levels:
@@ -515,6 +563,7 @@ categories:
       - id: SW-TS-05
         name: Vision-Based Tactile Sensor Deactivation
         method: Verify deactivation feature
+        evidence: "Before/after bandwidth log"
         automation: auto
         conditional: true
         levels:
@@ -526,6 +575,7 @@ categories:
         method: >-
           Test refresh rate sustained at the host; record the vendor's rated maximum
           rate for comparison
+        evidence: "Rate capture (bag)"
         automation: auto
         conditional: true
         levels:
@@ -543,6 +593,7 @@ categories:
         must_have_level: 1
         name: Functional Integrity of All Camera Streams
         method: Verify all streams (color, depth) fully functional
+        evidence: "Sample recordings (bag) of every stream"
         automation: auto
         levels:
           0: No support
@@ -551,6 +602,7 @@ categories:
       - id: SW-CAM-02
         name: Camera Calibration
         method: Verify camera calibration parameters and calibration quality
+        evidence: "Intrinsics/extrinsics files + reprojection-error report"
         automation: semi
         levels:
           0: No calibration data
@@ -559,6 +611,7 @@ categories:
       - id: SW-CAM-03
         name: Multi-Camera Time Synchronization
         method: Verify all camera streams use a common time source (PTP/system clock/hardware sync) and validate synchronization accuracy
+        evidence: "Multi-camera capture (bag) + timestamp-diff analysis"
         automation: auto
         levels:
           0: No common time source
@@ -567,6 +620,7 @@ categories:
       - id: SW-CAM-04
         name: Color Reproduction and Consistency
         method: Verify color accuracy, white balance stability, and consistency under different lighting conditions against reference color targets
+        evidence: "Images vs color target in 4 lighting conditions"
         automation: semi
         levels:
           0: Severe color casts or shifts
@@ -575,6 +629,7 @@ categories:
       - id: SW-CAM-05
         name: Supported Resolution and Frame Rate
         method: Verify camera resolution, frame rate, and stream stability
+        evidence: "Spec sheet + measured capture (bag)"
         automation: auto
         levels:
           0: No specifications or unstable
@@ -585,6 +640,7 @@ categories:
         must_have_level: 1
         name: Stereo and Wrist Camera FoV Coverage
         method: Verify stereo and wrist cameras cover the manipulation workspace, including hands, tools, and nearby objects
+        evidence: "Coverage images showing hands, tools, objects"
         automation: semi
         levels:
           0: Inadequate coverage
@@ -598,6 +654,7 @@ categories:
       - id: SW-TMP-01
         name: Accurate Real-Time Temperature Streams
         method: Verify accurate real-time readings
+        evidence: "Temperature readings from tegrastats + photo showing the IR thermometer reading while pointed at the measured component"
         automation: auto
         levels:
           0: Outside tolerance
@@ -605,6 +662,7 @@ categories:
       - id: SW-TMP-02
         name: Operating Range Compliance Under Stress
         method: Verify operating range compliance
+        evidence: "Stress-test temperature traces (bag)"
         automation: auto
         levels:
           0: Does not match
@@ -612,6 +670,7 @@ categories:
       - id: SW-TMP-03
         name: Overheating Warning for Abnormal Joints
         method: Verify warning system
+        evidence: "Induced-fault test log/video"
         automation: semi
         levels:
           0: No support
@@ -619,6 +678,7 @@ categories:
       - id: SW-TMP-04
         name: Temperature Data Refresh Rate
         method: Verify the refresh rate frequency
+        evidence: "Rate capture (bag)"
         automation: auto
         levels:
           0: 10 Hz or below
@@ -633,6 +693,7 @@ categories:
         must_have_level: 2
         name: WBC Policy Existence and Stability
         method: Verify WBC under max load with all peripherals
+        evidence: "Policy description + max-load video + telemetry (bag)"
         automation: semi
         levels:
           0: No support
@@ -640,6 +701,7 @@ categories:
       - id: SW-WBC-02
         name: Fixed-Base Manipulation Stability (Initial Posture)
         method: Verify continuous balance
+        evidence: "Continuous run video + telemetry (bag)"
         automation: semi
         levels:
           0: Unstable
@@ -648,6 +710,7 @@ categories:
       - id: SW-WBC-03
         name: Stability During Upper-Body Manipulation
         method: Verify continuous balance
+        evidence: "Continuous run video + telemetry (bag)"
         automation: semi
         levels:
           0: Unstable
@@ -658,6 +721,7 @@ categories:
         must_have_level: 1
         name: Locomotion Stability (Walking, All Peripherals)
         method: Verify continuous balance
+        evidence: "Continuous walking video + telemetry (bag)"
         automation: semi
         levels:
           0: Unstable
@@ -668,6 +732,7 @@ categories:
         must_have_level: 1
         name: Locomanipulation Stability (Walking, Max Payload)
         method: Verify continuous balance with max payload
+        evidence: "Continuous walking video + telemetry (bag)"
         automation: semi
         levels:
           0: Unstable
@@ -676,6 +741,7 @@ categories:
       - id: SW-WBC-06
         name: Independent Upper-Body Control
         method: Verify independent control
+        evidence: "Command/response demo video"
         automation: auto
         levels:
           0: No support
@@ -691,6 +757,7 @@ categories:
         must_have_level: 2
         name: Retargeter Precision and Reliability
         method: Verify max precision and reliability
+        evidence: "Commanded vs achieved poses (bag), repeated trials"
         automation: semi
         levels:
           0: Does not match
@@ -698,6 +765,7 @@ categories:
       - id: SW-TEL-02
         name: Glove-Based Teleop End-to-End
         method: Verify max accuracy / consistency
+        evidence: "Session recording (bag + video) + packet transmission and reception timing jitter logs + end-effector tracking error measurements"
         automation: semi
         levels:
           0: Does not work
@@ -705,6 +773,7 @@ categories:
       - id: SW-TEL-03
         name: Glove Calibration Utility
         method: Verify max calibration fidelity
+        evidence: "Utility walkthrough + calibration file"
         automation: semi
         levels:
           0: No utility
@@ -712,6 +781,7 @@ categories:
       - id: SW-TEL-04
         name: Haptic Feedback System
         method: Verify full range haptic
+        evidence: "Response test log across range"
         automation: manual
         levels:
           0: No support
@@ -719,6 +789,7 @@ categories:
       - id: SW-TEL-05
         name: Hand-Tracking Based Teleop End-to-End
         method: Verify max accuracy / consistency
+        evidence: "Session recording (bag + video) + packet transmission and reception timing jitter logs + end-effector tracking error measurements"
         automation: semi
         levels:
           0: Does not work
@@ -730,6 +801,7 @@ categories:
           motion, timestamped at both ends. Where only the robot-side segment
           (command received to motion) can be instrumented, record that scope
           explicitly with the result
+        evidence: "Timestamp trace (bag) with P99"
         automation: auto
         levels:
           0: 50 ms P99 or above
@@ -750,6 +822,7 @@ categories:
           joint friction, torque constants) from the measured response, and compare
           them against the values declared in the simulation asset. Kinematics are
           compared against the manufacturer's specification
+        evidence: "Asset files (URDF/USD/MJCF) + AnchorLab report"
         automation: semi
         levels:
           0: Does not match
@@ -758,6 +831,7 @@ categories:
       - id: SW-SIM-02
         name: Visual Model (Meshes) Linked and Displayed
         method: Verify visual integrity
+        evidence: "Rendered screenshots"
         automation: auto
         levels:
           0: Broken meshes
@@ -765,6 +839,7 @@ categories:
       - id: SW-SIM-03
         name: Home/Initial Posture Configuration
         method: Verify posture
+        evidence: "Config file + sim vs physical pose"
         automation: auto
         levels:
           0: Does not match
@@ -777,6 +852,7 @@ categories:
       - id: SW-SIM-04
         name: Assets Load Error-Free in Isaac Sim
         method: Verify error-free loading
+        evidence: "Load log"
         automation: auto
         levels:
           0: Errors on load
@@ -787,6 +863,7 @@ categories:
           Verify physics fidelity against system identification results from the
           physical robot: replay an identical joint trajectory in PhysX and on the
           robot, and compare the resulting joint states and contact behaviour
+        evidence: "PhysX-vs-hardware report"
         automation: semi
         levels:
           0: Does not match
@@ -797,6 +874,7 @@ categories:
           Verify physics fidelity against system identification results from the
           physical robot: replay an identical joint trajectory in Newton and on the
           robot, and compare the resulting joint states and contact behaviour
+        evidence: "Newton-vs-hardware report"
         automation: semi
         levels:
           0: Does not match
@@ -814,6 +892,7 @@ categories:
           the client drive the asset and the resulting joint state is returned to the
           client. Record roundtrip count/rate, command-vs-state tracking error, and
           transport errors.
+        evidence: "Connection test log"
         automation: auto
         levels:
           0: No support
@@ -821,6 +900,7 @@ categories:
       - id: SW-SIM-08
         name: Motion Control Stability and Determinism in Isaac Sim
         method: Verify stability / determinism
+        evidence: "Repeated-run trajectory diff"
         automation: auto
         levels:
           0: Unstable or non-deterministic
@@ -833,6 +913,7 @@ categories:
       - id: SW-SIM-09
         name: Assets Load Correctly in MuJoCo
         method: Verify error-free loading
+        evidence: "Load log"
         automation: auto
         levels:
           0: Errors on load
@@ -844,6 +925,7 @@ categories:
           inertias in the MuJoCo model against the source URDF/USD. Dynamic: replay an
           identical joint trajectory in MuJoCo and on the physical robot and compare
           the resulting joint states. Record which parts were run
+        evidence: "Sim-vs-hardware comparison"
         automation: semi
         levels:
           0: Structural mismatch, or simulation non-deterministic across identical runs
@@ -853,6 +935,7 @@ categories:
       - id: SW-SIM-11
         name: Simple Control Task Stability (Standing/Hovering)
         method: Verify control stability
+        evidence: "Run log"
         automation: auto
         levels:
           0: Unstable
@@ -867,6 +950,7 @@ categories:
         must_have_level: 1
         name: Secure Boot
         method: System boots only authenticated bootloader, kernel, and firmware images
+        evidence: "Fuse/status output + boot-chain validation report"
         automation: auto
         levels:
           0: Secure Boot not enabled
@@ -875,6 +959,7 @@ categories:
       - id: SW-SEC-02
         name: Rollback Protection
         method: Attempt to install or boot an older bootloader, kernel, or system image
+        evidence: "Downgrade-attempt log"
         automation: semi
         levels:
           0: Older image can boot
@@ -883,6 +968,7 @@ categories:
       - id: SW-SEC-03
         name: Secure Storage for Keys and Sensitive Data
         method: Keys, certificates, and sensitive configuration are not stored as plain files on the rootfs
+        evidence: "Architecture doc + rootfs audit"
         automation: auto
         levels:
           0: Keys stored in plain files
@@ -891,6 +977,7 @@ categories:
       - id: SW-SEC-04
         name: Disk Encryption
         method: Data at rest is protected using disk encryption for required partitions
+        evidence: "Partition status + unlock demonstration"
         automation: auto
         levels:
           0: No disk encryption
@@ -899,6 +986,7 @@ categories:
       - id: SW-SEC-05
         name: Default Account and Debug Lockdown
         method: Production image blocks default credentials and unnecessary debug access
+        evidence: "Hardening audit: accounts, port scan, root policy"
         automation: auto
         levels:
           0: Default passwords or unrestricted debug access exist
@@ -907,6 +995,7 @@ categories:
       - id: SW-SEC-06
         name: Security Logging
         method: Login attempts, admin actions, Secure Boot status, OTA security events
+        evidence: "Log extract + retention policy"
         automation: auto
         levels:
           0: No security logs
@@ -920,6 +1009,7 @@ categories:
       - id: SW-OTA-01
         name: Image-Based OTA
         method: Robot can update JetPack, BSP, bootloader, kernel, rootfs, and system packages through OTA
+        evidence: "OTA session log, versions before/after"
         automation: semi
         levels:
           0: No OTA support
@@ -928,6 +1018,7 @@ categories:
       - id: SW-OTA-02
         name: Rootfs A/B and Recovery
         method: Test OTA with rootfs A/B and interrupted update
+        evidence: "Interrupted-update test log"
         automation: semi
         levels:
           0: OTA failure may brick device
@@ -936,6 +1027,7 @@ categories:
       - id: SW-OTA-03
         name: OTA with Secure Boot Enabled
         method: Updated system boots only authenticated code
+        evidence: "Post-OTA boot log"
         automation: semi
         levels:
           0: Not supported
@@ -943,6 +1035,7 @@ categories:
       - id: SW-OTA-04
         name: Secure OTA Payload
         method: OTA payload is authenticated before installation
+        evidence: "Design doc + validation log"
         automation: auto
         levels:
           0: No payload security
@@ -950,6 +1043,7 @@ categories:
       - id: SW-OTA-05
         name: OTA Logging and Audit Records
         method: Version, payload ID, result, trigger source, and failure reason are retained
+        evidence: "Audit log sample"
         automation: auto
         levels:
           0: No logs
@@ -958,6 +1052,7 @@ categories:
       - id: SW-OTA-06
         name: Post-Update Validation (Smoke Test)
         method: JetPack, CUDA, TensorRT, Isaac ROS, cameras, network, and robot SDK pass validation after OTA reboot
+        evidence: "Smoke-test report covering all components"
         automation: auto
         levels:
           0: No validation
@@ -973,6 +1068,7 @@ categories:
       - id: NT-CA-01
         name: Developer-Ready Distribution and Availability
         method: Review pricing model, sales channels, procurement workflow; verify shipping coverage, regional entity presence, and localization
+        evidence: "Published pricing + procurement instructions + regional shipping, language-support, and warranty coverage"
         automation: manual
         levels:
           0: No accessible procurement path or availability
@@ -987,6 +1083,7 @@ categories:
       - id: NT-SC-01
         name: Manufacturing Scale and Sustained Supply
         method: Review production capacity plans and facility certifications; audit supplier agreements and second-source coverage; verify replacement-parts strategy
+        evidence: "Monthly capacity and ramp plan + qualified supplier/second-source coverage + replacement-parts commitment"
         automation: manual
         levels:
           0: Cannot manufacture at scale
@@ -1001,6 +1098,7 @@ categories:
       - id: NT-CP-01
         name: Security Posture and Technical Min Spec
         method: Conduct security audit of firmware, boot chain, and access controls
+        evidence: "Scoped security audit report + findings and remediation status + firmware, boot-chain, and access-control review"
         automation: manual
         levels:
           0: Unauthorized access vectors found
@@ -1015,6 +1113,7 @@ categories:
       - id: NT-SS-01
         name: Ongoing Support Across HW/SW/Logistics
         method: Review support organization, staffing, technical competency; audit ticket-handling infrastructure and escalation procedures
+        evidence: "Support-channel links + response-time SLAs by severity + escalation procedures"
         automation: manual
         levels:
           0: No defined support structure
@@ -1029,6 +1128,7 @@ categories:
       - id: NT-DOC-01
         name: Developer-Ready Documentation
         method: Review documentation completeness against GR00T integration workflow; validate accuracy and version currency
+        evidence: "Documentation portal and sample-code links + completeness and accuracy review against the GR00T integration workflow"
         automation: manual
         levels:
           0: Documentation missing or inadequate

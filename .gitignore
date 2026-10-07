@@ -16,13 +16,6 @@ venv/
 *.swp
 .DS_Store
 
-# Installed copies of skills (source of truth is skills/; run skills/install.sh).
-# Covers the skill directories of common coding agents.
-.agents/skills/
-.claude/skills/
-.cursor/skills/
-.codex/skills/
-
 # Test run artifacts (raw logs/captures from test execution; keep results.yaml and reports)
 robots/*/tests/output/
 *.log
