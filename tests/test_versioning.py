@@ -30,7 +30,7 @@ from gr00t_ready.scoring import score_evaluation
 
 class VersioningTest(unittest.TestCase):
     def test_package_version_comes_from_version_file(self):
-        self.assertEqual(__version__, "0.3.0")
+        self.assertEqual(__version__, "0.3")
 
     def test_checklist_records_current_version(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -40,7 +40,8 @@ class VersioningTest(unittest.TestCase):
                 0,
             )
             results = (robot_dir / "results" / "results.yaml").read_text()
-            self.assertIn("evaluation_version: 0.3.0", results)
+            self.assertIn("evaluation_version: 0.3\n", results)
+            self.assertEqual(load_results(robot_dir).tier, "self-serve")
 
     def test_legacy_results_default_to_current_version(self):
         with tempfile.TemporaryDirectory() as tmp:

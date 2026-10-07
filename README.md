@@ -19,6 +19,13 @@ Two tracks are available for developers:
 Both tracks are evaluations of platform readiness; completing them does not
 constitute an application or formal agreement with NVIDIA.
 
+> [!IMPORTANT]
+> **Release 0.3 is the Self-Serve release.** Evaluators prepare and run tests,
+> verify each outcome against the rubric, and record scores and evidence
+> themselves.
+>
+> Completing this evaluation does not grant GR00T-Ready Verified status.
+
 <p align="center"><img src="media/humanoid_robot.jpeg" alt="Humanoid robot" height="300"></p>
 
 The evaluation criteria are described in the
@@ -31,7 +38,7 @@ flowchart LR
     Framework[Evaluation Framework] --> Criteria[Evaluation Criteria]
     Criteria --> Workflow[Evaluation Workflow]
     Robot[Robot Profile and Sources] --> Workflow
-    Skills[Agent Skills and Test Procedures] --> Workflow
+    Tests[Evaluator Test Procedures] --> Workflow
     Workflow --> Results[Results and Evidence]
     Results --> Toolkit[Validation and Scoring Toolkit]
     Toolkit --> Dashboard[Progress Dashboard]
@@ -39,9 +46,9 @@ flowchart LR
 ```
 
 The framework defines what readiness means, while the criteria turn it into a
-consistent evaluation. Robot information and test procedures feed the workflow;
-the resulting scores and evidence are then validated and presented in the
-dashboard and reports.
+consistent evaluation. Evaluators prepare and run tests using the robot
+documentation and SDK, then record scores and evidence. The toolkit validates
+those results and presents them in the dashboard and reports.
 
 ## Quick start
 
@@ -78,7 +85,8 @@ python3 -m gr00t_ready checklist robots/my_robot
 
 This creates `robots/my_robot/results/results.yaml`. Update its date and
 evaluator fields, then use it to record scores, notes, and evidence as tests are
-completed.
+completed. New checklists default to `tier: self-serve`. To evaluate the Official
+tier, set `tier: official` in both the robot profile and the results file.
 
 ### 4. Follow progress in the dashboard
 
@@ -107,18 +115,34 @@ must-have status, gate summaries, blockers, gaps, and detailed evidence.
 
 ## How an evaluation works
 
-Each checklist item is completed in one of three ways:
+Each checklist item is classified in one of three ways:
 
 - **Automatic:** a script can perform the check.
-- **Guided:** a script performs the check with help from an operator.
+- **Guided:** a script can perform the check with help from an operator.
 - **Manual:** an operator follows written steps and records the outcome.
+
+These classifications describe the nature of the check. In release 0.3,
+evaluators write or run any scripts themselves, verify the results against
+`criteria/criteria.yaml`, and record the scores.
 
 For each item, record the score and enough evidence for another person to
 understand the result. Evidence can include log files, notes, photos, or videos.
 The dashboard provides password-protected photo and video uploads.
 
-If you use the included agent-assisted workflow, see [AGENT.md](AGENT.md) and
-the instructions under `skills/`.
+Work through `criteria/criteria.yaml` one item at a time. Use each item's method
+and scoring rubric to prepare a script or manual checklist based on the robot's
+documentation and SDK. See the [test conventions](robots/_template/tests/README.md)
+for filenames, output format, and execution guidance.
+
+Record each result immediately in `results/results.yaml`, preserving its
+`evaluation_version`. Include measured evidence and explain partial support or
+missing features. Leave unrun tests blank and track blockers in
+`robots/my_robot/BLOCKERS.md`. Validate results and refresh the board as you go:
+
+```bash
+python3 -m gr00t_ready validate robots/my_robot
+python3 -m gr00t_ready board robots/my_robot
+```
 
 ## Understanding scores
 
@@ -136,6 +160,10 @@ security. A gate is:
   support;
 - **Fail** when an applicable item scores 0;
 - **Incomplete** when required testing is not finished.
+
+Self-Serve displays these verdicts as **Compatible**, **Partial**,
+**Not Compatible**, and **Incomplete**, respectively. Official uses the labels
+above and also includes commercial and operational criteria.
 
 Some items are marked as **must-have**. These must reach their required score
 before the platform can meet the certification baseline.

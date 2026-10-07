@@ -1,10 +1,10 @@
 # Robot profile — copy robots/_template/ to robots/<robot_name>/ and fill in.
-# This file gives the agent (and test scripts) everything needed to generate and run tests.
+# Record the specifications and connection details needed to prepare and run tests.
 
 name: _template
 vendor: ""
 model: ""
-tier: official            # official | self-serve
+tier: self-serve          # self-serve | official
 
 # How to reach the robot's onboard compute (Jetson Thor)
 connection:
@@ -14,14 +14,13 @@ connection:
   notes: ""               # jump host, VPN, credentials location, etc.
 
 # Documentation and SDK locations live in sources.yaml (local paths, websites,
-# git repos). The agent reads that manifest to learn the robot before
-# generating tests.
+# git repos). Use that manifest to find the documentation needed to prepare tests.
 sdk:
   language: ""            # python / c++ / ros2 packages ...
   ros2_distro: ""         # e.g. humble
   notes: ""
 
-# Vendor-claimed specs used as pass/fail references by generated tests.
+# Vendor-claimed specs used as references when preparing and interpreting tests.
 # Fill from the datasheet; tests compare measured values against these.
 specs:
   jetpack_version: ""

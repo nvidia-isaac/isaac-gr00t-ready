@@ -1,19 +1,18 @@
 # Source manifest — where to find this robot's documentation and SDK.
 #
-# When onboarding a robot, the agent reads this manifest and builds a lightweight
-# index of each source (sources_index.md) from tables of contents and headings —
-# it does NOT read the docs in full. Later, each criteria item triggers a
-# targeted search of just the relevant source/section for the API or spec it
-# needs. Nothing needs to be copied into the repo; local paths and URLs are both
-# fine.
+# Use this manifest to find documentation for each criterion. For large sources,
+# a lightweight sources_index.md can map topics to relevant sections using tables
+# of contents and headings. Search those sections for the API or specification
+# needed by each test. Sources can remain at their local paths or URLs; they do
+# not need to be copied into the repository.
 #
 # Fields per source:
 #   name      short identifier
 #   type      local  = file or directory on this machine
-#             web    = website / online docs (agent fetches the URL)
+#             web    = website / online docs
 #             git    = repository to clone/read (SDK source, examples)
 #   location  absolute path, URL, or git URL
-#   topics    what this source is authoritative for — helps the agent decide
+#   topics    what this source is authoritative for — helps identify
 #             what to read for a given criteria item. Suggested topics:
 #             specs, joints, hands, cameras, imu, ft_sensor, tactile, network,
 #             compute, power, sdk_api, ros2, teleop, simulation, security, ota,
