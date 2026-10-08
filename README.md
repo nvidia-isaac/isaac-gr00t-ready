@@ -1,7 +1,7 @@
 # GR00T-Ready Evaluation
 
 GR00T-Ready defines the technical requirements and validation procedures for
-robot platforms integrating with Project GR00T. The framework covers the full
+robot platforms integrating with NVIDIA Isaac GR00T. The framework covers the full
 integration surface — whole-body motion control, sensor and actuator fidelity,
 embedded compute, middleware compatibility, end-effector manipulation,
 teleoperation, simulation readiness, security, and OTA capability — and is
