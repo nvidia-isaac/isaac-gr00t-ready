@@ -879,24 +879,6 @@ categories:
         levels:
           0: Does not match
           2: All match
-      - id: SW-SIM-07
-        name: Communication Interfaces (UCX Server)
-        # UCX = Unified Communication X, NVIDIA's core communications library
-        # (get/put, send/receive, active messages between CPU/GPU endpoints).
-        # Ref: https://docs.nvidia.com/multi-node-nvlink-systems/multi-node-tuning-guide/ucx.html
-        method: >-
-          Verify UCX (Unified Communication X) comms: the simulated asset exposes a
-          UCX endpoint ("UCX server") that an external client connects to. Confirm the
-          UCX stack and its transports are present (e.g. ucx_info -d, UCX_TLS), then
-          close a command-in / status-out loop over that endpoint — commands sent by
-          the client drive the asset and the resulting joint state is returned to the
-          client. Record roundtrip count/rate, command-vs-state tracking error, and
-          transport errors.
-        evidence: "Connection test log"
-        automation: auto
-        levels:
-          0: No support
-          2: Supported
       - id: SW-SIM-08
         name: Motion Control Stability and Determinism in Isaac Sim
         method: Verify stability / determinism
