@@ -136,7 +136,7 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
         cats.append({"id": cat.id, "name": cat.name, "section": cat.section,
                      "items": items})
     total = sum(counts.values())
-    finished = counts["done"] + counts["na"] + counts["skipped"]
+    finished = counts["done"] + counts["na"]  # skipped = deferred, not finished
     # must-have compliance: certification requires every must-have item to reach
     # its required level. met=True/False when tested; None when not yet assessed.
     mh = [(c, i) for c in cats for i in c["items"] if i["must_have"]]
@@ -144,11 +144,11 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
     mh_unmet = [i["id"] for _, i in mh if i["must_have_met"] is False]
     mh_pending = [i["id"] for _, i in mh if i["must_have_met"] is None]
     # point totals, same semantics as scoring.py: invalid items excluded from
-    # both sides; untested items count toward possible
+    # both sides; untested and skipped items count toward possible
     achieved = possible = 0
     for c in cats:
         for i in c["items"]:
-            if i["status"] in ("na", "skipped"):
+            if i["status"] == "na":
                 continue
             possible += i["max"]
             if i["score"] is not None:
@@ -186,7 +186,7 @@ def render_board(categories: list[Category], evaluation: RobotEvaluation,
             rows[status].append((cat, item))
 
     total = sum(len(v) for v in rows.values())
-    finished = len(rows["done"]) + len(rows["na"]) + len(rows["skipped"])
+    finished = len(rows["done"]) + len(rows["na"])  # skipped = deferred, not finished
     achieved = sum(
         r.score for r in evaluation.results.values() if r.score is not None
     )
@@ -297,7 +297,7 @@ def render_board_terminal(categories: list[Category], evaluation: RobotEvaluatio
         out.append(f"{cat.section} / {cat.name}")
         out.extend(shown)
     total = sum(counts.values())
-    finished = counts["done"] + counts["na"] + counts["skipped"]
+    finished = counts["done"] + counts["na"]  # skipped = deferred, not finished
     summary = "  ".join(f"{STATUS_ICONS[s]} {STATUS_LABELS[s]}: {counts[s]}" for s in ORDER)
     mh_items = [i for cat in categories if not (cat.tier1_only and not tier1) for i in cat.items if i.must_have]
     mh_unmet = [i.id for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is False]

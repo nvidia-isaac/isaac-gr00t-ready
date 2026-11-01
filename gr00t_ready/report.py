@@ -94,7 +94,10 @@ def render_report(score: EvaluationScore) -> str:
         ]
     if untested:
         lines += ["", "## Not Yet Tested", ""]
-        lines += [f"- **{s.item.id}** {s.item.name}" for s in untested]
+        lines += [f"- **{s.item.id}** {s.item.name}"
+                  + (f" — skipped: {s.result.notes or 'deferred'}"
+                     if s.result is not None and s.result.is_skipped else "")
+                  for s in untested]
 
     lines += ["", "## Detailed Results", ""]
     for gate in score.gates:
@@ -106,13 +109,13 @@ def render_report(score: EvaluationScore) -> str:
             "| --- | --- | --- | --- | --- |",
         ]
         for s in gate.items:
-            if not s.applicable:
-                if s.result is not None and s.result.is_skipped:
-                    status = "skipped"
-                    detail = (s.result.notes or "not testable now — deferred") + " (excluded from totals)"
-                else:
-                    status = "invalid"
-                    detail = "feature not present on this platform — excluded from totals"
+            if s.result is not None and s.result.is_skipped:
+                status = "skipped"
+                detail = ((s.result.notes or "not testable now — deferred")
+                          + " (counts as not yet tested)")
+            elif not s.applicable:
+                status = "invalid"
+                detail = "feature not present on this platform — excluded from totals"
             elif not s.tested:
                 status, detail = "—", "not tested"
             else:

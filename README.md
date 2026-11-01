@@ -172,9 +172,11 @@ Two additional results are available when a numeric score is not appropriate:
 
 - **Invalid:** the robot does not have the feature being evaluated, and the
   criterion allows that feature to be absent;
-- **Skipped:** the test cannot be completed yet and has been deferred.
+- **Skipped:** the test cannot be completed yet and has been deferred. A
+  skipped item counts as not yet tested: its gate stays Incomplete, its points
+  stay in the possible total, and a skipped must-have stays pending.
 
-Invalid and skipped items are not included in score totals.
+Invalid items are not included in score totals.
 
 ## Command reference
 

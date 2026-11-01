@@ -58,9 +58,10 @@ class Category:
 class Result:
     """A recorded result for one item.
 
-    score is an int level, or None when the item is EXCLUDED from totals; the
-    `kind` then says why: 'invalid' (feature absent — permanent) or 'skipped'
-    (can't be tested now — deferred to a future session).
+    score is an int level, or None when there is no numeric score; the `kind`
+    then says why: 'invalid' (feature absent — permanent, excluded from totals)
+    or 'skipped' (can't be tested now — deferred to a future session; counts
+    as untested, so it keeps its gate Incomplete and its points in the total).
     """
 
     item_id: str
@@ -72,7 +73,7 @@ class Result:
 
     @property
     def is_na(self) -> bool:
-        """Excluded from the score totals (invalid or skipped)."""
+        """No numeric score (invalid or skipped)."""
         return self.score is None
 
     @property
