@@ -34,7 +34,14 @@ from pathlib import Path
 
 from . import __version__
 from .board import render_board, render_board_terminal
-from .loader import REPO_ROOT, load_criteria, load_results, tier_problem, validate_results
+from .loader import (
+    REPO_ROOT,
+    load_criteria,
+    load_results,
+    results_path,
+    tier_problem,
+    validate_results,
+)
 from .report import render_report
 from .scoring import score_evaluation
 
@@ -87,6 +94,15 @@ def cmd_checklist(args) -> int:
     return 0
 
 
+def _missing_results(robot_dir: str) -> str | None:
+    """A message when the robot has no results file, else None."""
+    path = results_path(Path(robot_dir))
+    if path.is_file():
+        return None
+    return (f"{path} not found; create it with "
+            f"`python3 -m gr00t_ready checklist {robot_dir}`")
+
+
 def _load(robot_dir: str):
     categories = load_criteria()
     evaluation = load_results(Path(robot_dir))
@@ -95,6 +111,10 @@ def _load(robot_dir: str):
 
 
 def cmd_validate(args) -> int:
+    missing = _missing_results(args.robot_dir)
+    if missing:
+        print(f"PROBLEM: {missing}")
+        return 1
     _, evaluation, problems = _load(args.robot_dir)
     if problems:
         for p in problems:
@@ -102,6 +122,14 @@ def cmd_validate(args) -> int:
         return 1
     print(f"results.yaml is valid (evaluation version {evaluation.evaluation_version})")
     return 0
+
+
+def _results_error(robot_dir: str) -> bool:
+    """Print and report a missing results file; nothing is scored without one."""
+    missing = _missing_results(robot_dir)
+    if missing:
+        print(f"error: {missing}", file=sys.stderr)
+    return missing is not None
 
 
 def _tier_error(evaluation) -> bool:
@@ -113,6 +141,8 @@ def _tier_error(evaluation) -> bool:
 
 
 def cmd_score(args) -> int:
+    if _results_error(args.robot_dir):
+        return 1
     categories, evaluation, problems = _load(args.robot_dir)
     if _tier_error(evaluation):
         return 1
@@ -130,6 +160,8 @@ def cmd_score(args) -> int:
 
 
 def cmd_report(args) -> int:
+    if _results_error(args.robot_dir):
+        return 1
     categories, evaluation, problems = _load(args.robot_dir)
     if _tier_error(evaluation):
         return 1
@@ -145,6 +177,8 @@ def cmd_report(args) -> int:
 
 
 def cmd_board(args) -> int:
+    if _results_error(args.robot_dir):
+        return 1
     robot_dir = Path(args.robot_dir)
     categories = load_criteria()
     evaluation = load_results(robot_dir)

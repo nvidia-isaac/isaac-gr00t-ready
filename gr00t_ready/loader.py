@@ -142,8 +142,12 @@ def _check_unique_ids(categories: list[Category]) -> None:
             seen.add(item.id)
 
 
+def results_path(robot_dir: Path) -> Path:
+    return Path(robot_dir) / "results" / "results.yaml"
+
+
 def load_results(robot_dir: Path) -> RobotEvaluation:
-    path = Path(robot_dir) / "results" / "results.yaml"
+    path = results_path(robot_dir)
     data = yaml.safe_load(path.read_text()) if path.exists() else {}
     data = data or {}
     results = {}
