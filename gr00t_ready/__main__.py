@@ -29,6 +29,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import datetime
+import shutil
 import sys
 from pathlib import Path
 
@@ -60,12 +62,29 @@ def cmd_items(args) -> int:
     return 0
 
 
+def _backup_path(path: Path) -> Path:
+    """A new, unused name next to path: <name>.bak-<YYYYmmdd-HHMMSS>[-N]."""
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    candidate = path.with_name(f"{path.name}.bak-{stamp}")
+    n = 1
+    while candidate.exists():
+        candidate = path.with_name(f"{path.name}.bak-{stamp}-{n}")
+        n += 1
+    return candidate
+
+
 def cmd_checklist(args) -> int:
     robot_dir = Path(args.robot_dir)
     out = robot_dir / "results" / "results.yaml"
     if out.exists() and not args.force:
-        print(f"error: {out} already exists (use --force to overwrite)", file=sys.stderr)
+        print(f"error: {out} already exists (use --force to overwrite; "
+              f"the old file is kept as a backup)", file=sys.stderr)
         return 1
+    if out.exists():
+        # --force must never lose recorded results: keep the old file first.
+        backup = _backup_path(out)
+        shutil.copy2(out, backup)
+        print(f"kept the previous results as {backup}")
     lines = [
         f"robot: {robot_dir.name}",
         "tier: self-serve        # self-serve | official",
@@ -209,7 +228,9 @@ def main() -> int:
 
     p = sub.add_parser("checklist", help="generate blank results.yaml for a robot")
     p.add_argument("robot_dir")
-    p.add_argument("--force", action="store_true")
+    p.add_argument("--force", action="store_true",
+                   help="overwrite an existing results.yaml; the old file is kept as "
+                        "results.yaml.bak-<timestamp> next to it")
     p.set_defaults(func=cmd_checklist)
 
     for name, func in (("validate", cmd_validate), ("score", cmd_score),

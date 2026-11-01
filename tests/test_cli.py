@@ -23,6 +23,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from gr00t_ready.__main__ import cmd_board, cmd_checklist, cmd_report, cmd_score, cmd_validate
+from gr00t_ready.loader import load_results
 
 
 def _run(cmd, **kwargs):
@@ -68,6 +69,57 @@ class MissingResultsTest(unittest.TestCase):
 
             self.assertEqual(rc, 0)
             self.assertIn("results.yaml is valid", out)
+
+
+class ChecklistForceTest(unittest.TestCase):
+    def _recorded_checklist(self, robot_dir: Path) -> Path:
+        self.assertEqual(_run(cmd_checklist, robot_dir=str(robot_dir), force=False)[0], 0)
+        path = robot_dir / "results" / "results.yaml"
+        text = path.read_text().replace("date: YYYY-MM-DD", "date: 2026-11-01")
+        # record a result for the first item, the way an evaluator would
+        path.write_text(text.replace("    score:\n", "    score: 2\n", 1))
+        self.assertEqual(load_results(robot_dir).results["HW-SI-01"].score, 2)
+        return path
+
+    def test_force_keeps_the_recorded_results_as_a_backup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            robot_dir = Path(tmp) / "example_robot"
+            path = self._recorded_checklist(robot_dir)
+            recorded = path.read_bytes()
+
+            rc, out, _ = _run(cmd_checklist, robot_dir=str(robot_dir), force=True)
+
+            self.assertEqual(rc, 0)
+            self.assertNotIn("    score: 2\n", path.read_text())  # fresh stub written
+            backups = sorted((robot_dir / "results").glob("results.yaml.bak-*"))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_bytes(), recorded)
+            self.assertIn(str(backups[0]), out)
+
+    def test_repeated_force_never_overwrites_a_backup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            robot_dir = Path(tmp) / "example_robot"
+            self._recorded_checklist(robot_dir)
+
+            for _ in range(3):
+                self.assertEqual(_run(cmd_checklist, robot_dir=str(robot_dir), force=True)[0], 0)
+
+            backups = list((robot_dir / "results").glob("results.yaml.bak-*"))
+            self.assertEqual(len(backups), 3)
+            self.assertEqual(sum("    score: 2\n" in b.read_text() for b in backups), 1)
+
+    def test_without_force_the_file_is_left_alone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            robot_dir = Path(tmp) / "example_robot"
+            path = self._recorded_checklist(robot_dir)
+            recorded = path.read_bytes()
+
+            rc, _, err = _run(cmd_checklist, robot_dir=str(robot_dir), force=False)
+
+            self.assertEqual(rc, 1)
+            self.assertIn("already exists", err)
+            self.assertEqual(path.read_bytes(), recorded)
+            self.assertEqual(list((robot_dir / "results").glob("results.yaml.bak-*")), [])
 
 
 if __name__ == "__main__":
