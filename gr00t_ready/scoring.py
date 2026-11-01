@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .loader import Category, Item, Result, RobotEvaluation
+from .loader import Category, Item, Result, RobotEvaluation, is_official
 
 PASS = "Pass"
 CONDITIONAL = "Conditional"
@@ -118,7 +118,7 @@ class EvaluationScore:
         return PASS
 
     def verdict_label(self, verdict: str) -> str:
-        if self.evaluation.tier in ("self-serve", "self_serve", "selfserve"):
+        if not is_official(self.evaluation):
             return SELF_SERVE_LABELS.get(verdict, verdict)
         return verdict
 
@@ -144,7 +144,7 @@ def score_gate(category: Category, evaluation: RobotEvaluation) -> GateScore:
 def score_evaluation(
     categories: list[Category], evaluation: RobotEvaluation
 ) -> EvaluationScore:
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     gates = [
         score_gate(cat, evaluation)
         for cat in categories

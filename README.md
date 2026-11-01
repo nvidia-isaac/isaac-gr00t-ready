@@ -86,7 +86,9 @@ python3 -m gr00t_ready checklist robots/my_robot
 This creates `robots/my_robot/results/results.yaml`. Update its date and
 evaluator fields, then use it to record scores, notes, and evidence as tests are
 completed. New checklists default to `tier: self-serve`. To evaluate the Official
-tier, set `tier: official` in both the robot profile and the results file.
+tier, set `tier: official` in both the robot profile and the results file. The
+tier is never assumed: a blank, missing or misspelled `tier:` is reported by
+`validate`, and `score`, `report` and `board` stop until it is fixed.
 
 ### 4. Follow progress in the dashboard
 

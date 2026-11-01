@@ -28,6 +28,14 @@ from .version import __version__
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CRITERIA_PATH = REPO_ROOT / "criteria" / "criteria.yaml"
 
+# Accepted spellings of the two tiers (compared after strip + lower-case).
+TIER_ALIASES = {
+    "official": "official",
+    "self-serve": "self-serve",
+    "self_serve": "self-serve",
+    "selfserve": "self-serve",
+}
+
 
 @dataclass
 class Item:
@@ -162,7 +170,7 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
         )
     return RobotEvaluation(
         robot=data.get("robot", Path(robot_dir).name),
-        tier=str(data.get("tier", "official")).lower(),
+        tier=_read_tier(data.get("tier")),
         date=str(data.get("date", datetime.date.today().isoformat())),
         evaluator=str(data.get("evaluator", "")),
         # Result files created before versioning are interpreted using the
@@ -172,9 +180,39 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
     )
 
 
+def _read_tier(raw: object) -> str:
+    """Canonical tier name; "" when blank or missing; the text itself when unknown."""
+    text = "" if raw is None else str(raw).strip().lower()
+    return TIER_ALIASES.get(text, text)
+
+
+def tier_problem(tier: str) -> str | None:
+    """None for a known tier, else a message saying how to fix `tier:`."""
+    if TIER_ALIASES.get(str(tier).strip().lower()) is not None:
+        return None
+    shown = f"{tier!r} is not a known tier" if tier else "tier is blank or missing"
+    return (f"{shown}; set `tier:` in results.yaml to one of: official, self-serve "
+            f"(it is never assumed)")
+
+
+def is_official(evaluation: RobotEvaluation) -> bool:
+    """True for Official, False for Self-Serve; ValueError for anything else.
+
+    Scoring, reports and boards all ask here, so a blank or misspelled tier
+    stops them instead of silently scoring as Official.
+    """
+    problem = tier_problem(evaluation.tier)
+    if problem:
+        raise ValueError(problem)
+    return TIER_ALIASES[str(evaluation.tier).strip().lower()] == "official"
+
+
 def validate_results(categories: list[Category], evaluation: RobotEvaluation) -> list[str]:
-    """Return problems such as unknown ids or undefined rubric scores."""
+    """Return problems such as unknown ids, undefined rubric scores or a bad tier."""
     problems = []
+    problem = tier_problem(evaluation.tier)
+    if problem:
+        problems.append(problem)
     items = {i.id: i for c in categories for i in c.items}
     for item_id, result in evaluation.results.items():
         item = items.get(item_id)

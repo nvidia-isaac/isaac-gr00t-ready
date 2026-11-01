@@ -28,7 +28,7 @@ import datetime
 import re
 from pathlib import Path
 
-from .loader import Category, RobotEvaluation
+from .loader import Category, RobotEvaluation, is_official
 
 STATUS_ICONS = {
     "done": "✅",
@@ -101,7 +101,7 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
                     names.add(m)
         return sorted(names)
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     counts = {s: 0 for s in ORDER}
     cats = []
     for cat in categories:
@@ -176,7 +176,7 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
 def render_board(categories: list[Category], evaluation: RobotEvaluation,
                  robot_dir: Path) -> str:
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     cats = [c for c in categories if tier1 or not c.tier1_only]
 
     rows: dict[str, list] = {s: [] for s in ORDER}
@@ -273,7 +273,7 @@ def render_board_terminal(categories: list[Category], evaluation: RobotEvaluatio
                           robot_dir: Path) -> str:
     """Compact one-line-per-item view for the terminal."""
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     out = []
     counts = {s: 0 for s in ORDER}
     for cat in categories:

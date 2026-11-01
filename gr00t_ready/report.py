@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime
 
 from .board import must_have_met
+from .loader import is_official
 from .scoring import CONDITIONAL, FAIL, INCOMPLETE, PASS, EvaluationScore, GateScore
 
 VERDICT_ICONS = {PASS: "✅", CONDITIONAL: "🟡", FAIL: "❌", INCOMPLETE: "⚪"}
@@ -40,7 +41,7 @@ def render_report(score: EvaluationScore) -> str:
         f"# GR00T-Ready Evaluation Report — {ev.robot}",
         "",
         f"- **Evaluation version:** {ev.evaluation_version}",
-        f"- **Tier:** {'Tier 1: Official' if ev.tier == 'official' else 'Tier 2: Self-Serve'}",
+        f"- **Tier:** {'Tier 1: Official' if is_official(ev) else 'Tier 2: Self-Serve'}",
         f"- **Date:** {ev.date}",
         f"- **Evaluator:** {ev.evaluator or 'n/a'}",
         f"- **Overall verdict:** {VERDICT_ICONS[score.overall_verdict]} "

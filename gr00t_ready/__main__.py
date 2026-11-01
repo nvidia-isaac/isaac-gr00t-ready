@@ -34,7 +34,7 @@ from pathlib import Path
 
 from . import __version__
 from .board import render_board, render_board_terminal
-from .loader import REPO_ROOT, load_criteria, load_results, validate_results
+from .loader import REPO_ROOT, load_criteria, load_results, tier_problem, validate_results
 from .report import render_report
 from .scoring import score_evaluation
 
@@ -104,8 +104,18 @@ def cmd_validate(args) -> int:
     return 0
 
 
+def _tier_error(evaluation) -> bool:
+    """Print and report a blank/unknown tier; scoring needs a known one."""
+    problem = tier_problem(evaluation.tier)
+    if problem:
+        print(f"error: {problem}", file=sys.stderr)
+    return problem is not None
+
+
 def cmd_score(args) -> int:
     categories, evaluation, problems = _load(args.robot_dir)
+    if _tier_error(evaluation):
+        return 1
     for p in problems:
         print(f"WARNING: {p}", file=sys.stderr)
     score = score_evaluation(categories, evaluation)
@@ -121,6 +131,8 @@ def cmd_score(args) -> int:
 
 def cmd_report(args) -> int:
     categories, evaluation, problems = _load(args.robot_dir)
+    if _tier_error(evaluation):
+        return 1
     for p in problems:
         print(f"WARNING: {p}", file=sys.stderr)
     score = score_evaluation(categories, evaluation)
@@ -136,6 +148,8 @@ def cmd_board(args) -> int:
     robot_dir = Path(args.robot_dir)
     categories = load_criteria()
     evaluation = load_results(robot_dir)
+    if _tier_error(evaluation):
+        return 1
     print(render_board_terminal(categories, evaluation, robot_dir))
     out = robot_dir / "BOARD.md"
     out.write_text(render_board(categories, evaluation, robot_dir))
