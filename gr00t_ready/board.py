@@ -86,6 +86,16 @@ def must_have_met(item, result):
     return result.score >= item.must_have_level
 
 
+def must_have_line(met: int, total: int, unmet: list[str], pending: int,
+                   unmet_mark: str = "⛔") -> str:
+    """'N/M met', then any unmet IDs and the pending count. The ✅ appears only
+    when every must-have is met, never while some are untested."""
+    return (f"{met}/{total} met"
+            + (f" — {unmet_mark} UNMET: {', '.join(unmet)}" if unmet else "")
+            + (f"; {pending} pending" if pending else "")
+            + (" ✅" if total and met == total else ""))
+
+
 def board_data(categories: list[Category], evaluation: RobotEvaluation,
                robot_dir: Path) -> dict:
     """Board state as plain data (consumed by the web dashboard)."""
@@ -203,8 +213,9 @@ def render_board(categories: list[Category], evaluation: RobotEvaluation,
                 if must_have_met(i, evaluation.results.get(i.id)) is False]
     mh_met = sum(1 for c, i in mh_items
                  if must_have_met(i, evaluation.results.get(i.id)) is True)
-    mh_line = (f"**Must-haves:** {mh_met}/{len(mh_items)} met"
-               + (f" — ⛔ UNMET: {', '.join(mh_unmet)}" if mh_unmet else " ✅"))
+    mh_pending = sum(1 for c, i in mh_items
+                     if must_have_met(i, evaluation.results.get(i.id)) is None)
+    mh_line = "**Must-haves:** " + must_have_line(mh_met, len(mh_items), mh_unmet, mh_pending)
 
     lines = [
         f"# Test Board — {evaluation.robot}",
@@ -302,7 +313,8 @@ def render_board_terminal(categories: list[Category], evaluation: RobotEvaluatio
     mh_items = [i for cat in categories if not (cat.tier1_only and not tier1) for i in cat.items if i.must_have]
     mh_unmet = [i.id for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is False]
     mh_met = sum(1 for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is True)
-    mh = f"⭐ Must-haves: {mh_met}/{len(mh_items)} met" + (f"  ⛔ UNMET: {', '.join(mh_unmet)}" if mh_unmet else "")
+    mh_pending = sum(1 for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is None)
+    mh = "⭐ Must-haves: " + must_have_line(mh_met, len(mh_items), mh_unmet, mh_pending)
     out.insert(
         0,
         f"{evaluation.robot} — evaluation v{evaluation.evaluation_version} — "
