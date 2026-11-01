@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import datetime
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -101,6 +102,9 @@ class RobotEvaluation:
     evaluator: str
     evaluation_version: str = __version__
     results: dict[str, Result] = field(default_factory=dict)
+    # entries that couldn't be read as a result; they load as untested and
+    # validate_results reports them
+    load_problems: list[str] = field(default_factory=list)
 
 
 def load_criteria(path: Path = CRITERIA_PATH) -> list[Category]:
@@ -151,8 +155,14 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
     data = yaml.safe_load(path.read_text()) if path.exists() else {}
     data = data or {}
     results = {}
+    load_problems = []
     for item_id, r in (data.get("results") or {}).items():
         if r is None:
+            continue
+        if not isinstance(r, dict):
+            load_problems.append(
+                f"{item_id}: entry must be a mapping with score/evidence/notes, "
+                f"got {r!r}; left untested")
             continue
         raw = r.get("score")
         kind = "value"
@@ -163,7 +173,12 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
         elif raw is None:
             continue  # untested — leave absent
         else:
-            score = int(raw)
+            score = _parse_level(raw)
+            if score is None:
+                load_problems.append(
+                    f"{item_id}: score {raw!r} is not an integer level (yes/no, "
+                    f"true/false and decimals are not accepted); left untested")
+                continue
         results[item_id] = Result(
             item_id=item_id,
             score=score,
@@ -181,7 +196,23 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
         # current pipeline version, preserving backward compatibility.
         evaluation_version=str(data.get("evaluation_version") or __version__),
         results=results,
+        load_problems=load_problems,
     )
+
+
+def _parse_level(raw: object) -> int | None:
+    """An int level from an int or an integer string; None for anything else.
+
+    YAML reads `no`/`yes` as booleans and `1.5` as a float; int() would turn
+    them into 0, 1 and 1 and record a result nobody meant to record.
+    """
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, str) and re.fullmatch(r"\s*-?\d+\s*", raw):
+        return int(raw)
+    return None
 
 
 def _read_tier(raw: object) -> str:
@@ -213,7 +244,7 @@ def is_official(evaluation: RobotEvaluation) -> bool:
 
 def validate_results(categories: list[Category], evaluation: RobotEvaluation) -> list[str]:
     """Return problems such as unknown ids, undefined rubric scores or a bad tier."""
-    problems = []
+    problems = list(evaluation.load_problems)
     problem = tier_problem(evaluation.tier)
     if problem:
         problems.append(problem)
