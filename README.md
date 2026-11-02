@@ -86,7 +86,9 @@ python3 -m gr00t_ready checklist robots/my_robot
 This creates `robots/my_robot/results/results.yaml`. Update its date and
 evaluator fields, then use it to record scores, notes, and evidence as tests are
 completed. New checklists default to `tier: self-serve`. To evaluate the Official
-tier, set `tier: official` in both the robot profile and the results file.
+tier, set `tier: official` in both the robot profile and the results file. The
+tier is never assumed: a blank, missing or misspelled `tier:` is reported by
+`validate`, and `score`, `report` and `board` stop until it is fixed.
 
 ### 4. Follow progress in the dashboard
 
@@ -172,9 +174,11 @@ Two additional results are available when a numeric score is not appropriate:
 
 - **Invalid:** the robot does not have the feature being evaluated, and the
   criterion allows that feature to be absent;
-- **Skipped:** the test cannot be completed yet and has been deferred.
+- **Skipped:** the test cannot be completed yet and has been deferred. A
+  skipped item counts as not yet tested: its gate stays Incomplete, its points
+  stay in the possible total, and a skipped must-have stays pending.
 
-Invalid and skipped items are not included in score totals.
+Invalid items are not included in score totals.
 
 ## Command reference
 

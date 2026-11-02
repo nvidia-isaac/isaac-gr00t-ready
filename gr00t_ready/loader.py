@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import datetime
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -27,6 +28,14 @@ from .version import __version__
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CRITERIA_PATH = REPO_ROOT / "criteria" / "criteria.yaml"
+
+# Accepted spellings of the two tiers (compared after strip + lower-case).
+TIER_ALIASES = {
+    "official": "official",
+    "self-serve": "self-serve",
+    "self_serve": "self-serve",
+    "selfserve": "self-serve",
+}
 
 
 @dataclass
@@ -58,9 +67,10 @@ class Category:
 class Result:
     """A recorded result for one item.
 
-    score is an int level, or None when the item is EXCLUDED from totals; the
-    `kind` then says why: 'invalid' (feature absent — permanent) or 'skipped'
-    (can't be tested now — deferred to a future session).
+    score is an int level, or None when there is no numeric score; the `kind`
+    then says why: 'invalid' (feature absent — permanent, excluded from totals)
+    or 'skipped' (can't be tested now — deferred to a future session; counts
+    as untested, so it keeps its gate Incomplete and its points in the total).
     """
 
     item_id: str
@@ -72,7 +82,7 @@ class Result:
 
     @property
     def is_na(self) -> bool:
-        """Excluded from the score totals (invalid or skipped)."""
+        """No numeric score (invalid or skipped)."""
         return self.score is None
 
     @property
@@ -92,6 +102,9 @@ class RobotEvaluation:
     evaluator: str
     evaluation_version: str = __version__
     results: dict[str, Result] = field(default_factory=dict)
+    # entries that couldn't be read as a result; they load as untested and
+    # validate_results reports them
+    load_problems: list[str] = field(default_factory=list)
 
 
 def load_criteria(path: Path = CRITERIA_PATH) -> list[Category]:
@@ -133,13 +146,23 @@ def _check_unique_ids(categories: list[Category]) -> None:
             seen.add(item.id)
 
 
+def results_path(robot_dir: Path) -> Path:
+    return Path(robot_dir) / "results" / "results.yaml"
+
+
 def load_results(robot_dir: Path) -> RobotEvaluation:
-    path = Path(robot_dir) / "results" / "results.yaml"
+    path = results_path(robot_dir)
     data = yaml.safe_load(path.read_text()) if path.exists() else {}
     data = data or {}
     results = {}
+    load_problems = []
     for item_id, r in (data.get("results") or {}).items():
         if r is None:
+            continue
+        if not isinstance(r, dict):
+            load_problems.append(
+                f"{item_id}: entry must be a mapping with score/evidence/notes, "
+                f"got {r!r}; left untested")
             continue
         raw = r.get("score")
         kind = "value"
@@ -150,7 +173,12 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
         elif raw is None:
             continue  # untested — leave absent
         else:
-            score = int(raw)
+            score = _parse_level(raw)
+            if score is None:
+                load_problems.append(
+                    f"{item_id}: score {raw!r} is not an integer level (yes/no, "
+                    f"true/false and decimals are not accepted); left untested")
+                continue
         results[item_id] = Result(
             item_id=item_id,
             score=score,
@@ -161,19 +189,65 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
         )
     return RobotEvaluation(
         robot=data.get("robot", Path(robot_dir).name),
-        tier=str(data.get("tier", "official")).lower(),
+        tier=_read_tier(data.get("tier")),
         date=str(data.get("date", datetime.date.today().isoformat())),
         evaluator=str(data.get("evaluator", "")),
         # Result files created before versioning are interpreted using the
         # current pipeline version, preserving backward compatibility.
         evaluation_version=str(data.get("evaluation_version") or __version__),
         results=results,
+        load_problems=load_problems,
     )
 
 
+def _parse_level(raw: object) -> int | None:
+    """An int level from an int or an integer string; None for anything else.
+
+    YAML reads `no`/`yes` as booleans and `1.5` as a float; int() would turn
+    them into 0, 1 and 1 and record a result nobody meant to record.
+    """
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, str) and re.fullmatch(r"\s*-?\d+\s*", raw):
+        return int(raw)
+    return None
+
+
+def _read_tier(raw: object) -> str:
+    """Canonical tier name; "" when blank or missing; the text itself when unknown."""
+    text = "" if raw is None else str(raw).strip().lower()
+    return TIER_ALIASES.get(text, text)
+
+
+def tier_problem(tier: str) -> str | None:
+    """None for a known tier, else a message saying how to fix `tier:`."""
+    if TIER_ALIASES.get(str(tier).strip().lower()) is not None:
+        return None
+    shown = f"{tier!r} is not a known tier" if tier else "tier is blank or missing"
+    return (f"{shown}; set `tier:` in results.yaml to one of: official, self-serve "
+            f"(it is never assumed)")
+
+
+def is_official(evaluation: RobotEvaluation) -> bool:
+    """True for Official, False for Self-Serve; ValueError for anything else.
+
+    Scoring, reports and boards all ask here, so a blank or misspelled tier
+    stops them instead of silently scoring as Official.
+    """
+    problem = tier_problem(evaluation.tier)
+    if problem:
+        raise ValueError(problem)
+    return TIER_ALIASES[str(evaluation.tier).strip().lower()] == "official"
+
+
 def validate_results(categories: list[Category], evaluation: RobotEvaluation) -> list[str]:
-    """Return problems such as unknown ids or undefined rubric scores."""
-    problems = []
+    """Return problems such as unknown ids, undefined rubric scores or a bad tier."""
+    problems = list(evaluation.load_problems)
+    problem = tier_problem(evaluation.tier)
+    if problem:
+        problems.append(problem)
     items = {i.id: i for c in categories for i in c.items}
     for item_id, result in evaluation.results.items():
         item = items.get(item_id)

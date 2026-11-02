@@ -20,19 +20,21 @@ for Official tier, or Compatible / Partial / Not Compatible for Self-Serve. The
 mapping from item-level 0/1/2 scores to a gate verdict:
 
   - n/a results on conditional items are excluded.
-  - INCOMPLETE  if any applicable item has no recorded result.
+  - skipped results count as untested: a deferred test is not a result.
+  - INCOMPLETE  if any applicable item has no recorded result (or is skipped).
   - FAIL        if any applicable item scored 0.
   - PASS        if every applicable item reached its max defined level.
   - CONDITIONAL otherwise (all items functional, but some below full support).
 
-The overall score is achieved points / possible points across tested items.
+The overall score is achieved points / possible points across applicable items
+(untested and skipped items count toward possible; invalid items don't).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .loader import Category, Item, Result, RobotEvaluation
+from .loader import Category, Item, Result, RobotEvaluation, is_official
 
 PASS = "Pass"
 CONDITIONAL = "Conditional"
@@ -54,11 +56,14 @@ class ItemScore:
 
     @property
     def tested(self) -> bool:
-        return self.result is not None
+        # A skipped item was deferred, not tested: it must not let its gate
+        # (or the overall verdict) reach Pass/Compatible.
+        return self.result is not None and not self.result.is_skipped
 
     @property
     def applicable(self) -> bool:
-        return not (self.result is not None and self.result.is_na)
+        # Only 'invalid' (feature absent on a conditional item) leaves the totals.
+        return not (self.result is not None and self.result.is_invalid)
 
     @property
     def achieved(self) -> int:
@@ -113,7 +118,7 @@ class EvaluationScore:
         return PASS
 
     def verdict_label(self, verdict: str) -> str:
-        if self.evaluation.tier in ("self-serve", "self_serve", "selfserve"):
+        if not is_official(self.evaluation):
             return SELF_SERVE_LABELS.get(verdict, verdict)
         return verdict
 
@@ -139,7 +144,7 @@ def score_gate(category: Category, evaluation: RobotEvaluation) -> GateScore:
 def score_evaluation(
     categories: list[Category], evaluation: RobotEvaluation
 ) -> EvaluationScore:
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     gates = [
         score_gate(cat, evaluation)
         for cat in categories

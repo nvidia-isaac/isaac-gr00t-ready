@@ -28,7 +28,7 @@ import datetime
 import re
 from pathlib import Path
 
-from .loader import Category, RobotEvaluation
+from .loader import Category, RobotEvaluation, is_official
 
 STATUS_ICONS = {
     "done": "✅",
@@ -86,6 +86,16 @@ def must_have_met(item, result):
     return result.score >= item.must_have_level
 
 
+def must_have_line(met: int, total: int, unmet: list[str], pending: int,
+                   unmet_mark: str = "⛔") -> str:
+    """'N/M met', then any unmet IDs and the pending count. The ✅ appears only
+    when every must-have is met, never while some are untested."""
+    return (f"{met}/{total} met"
+            + (f" — {unmet_mark} UNMET: {', '.join(unmet)}" if unmet else "")
+            + (f"; {pending} pending" if pending else "")
+            + (" ✅" if total and met == total else ""))
+
+
 def board_data(categories: list[Category], evaluation: RobotEvaluation,
                robot_dir: Path) -> dict:
     """Board state as plain data (consumed by the web dashboard)."""
@@ -101,7 +111,7 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
                     names.add(m)
         return sorted(names)
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     counts = {s: 0 for s in ORDER}
     cats = []
     for cat in categories:
@@ -136,7 +146,7 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
         cats.append({"id": cat.id, "name": cat.name, "section": cat.section,
                      "items": items})
     total = sum(counts.values())
-    finished = counts["done"] + counts["na"] + counts["skipped"]
+    finished = counts["done"] + counts["na"]  # skipped = deferred, not finished
     # must-have compliance: certification requires every must-have item to reach
     # its required level. met=True/False when tested; None when not yet assessed.
     mh = [(c, i) for c in cats for i in c["items"] if i["must_have"]]
@@ -144,11 +154,11 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
     mh_unmet = [i["id"] for _, i in mh if i["must_have_met"] is False]
     mh_pending = [i["id"] for _, i in mh if i["must_have_met"] is None]
     # point totals, same semantics as scoring.py: invalid items excluded from
-    # both sides; untested items count toward possible
+    # both sides; untested and skipped items count toward possible
     achieved = possible = 0
     for c in cats:
         for i in c["items"]:
-            if i["status"] in ("na", "skipped"):
+            if i["status"] == "na":
                 continue
             possible += i["max"]
             if i["score"] is not None:
@@ -176,7 +186,7 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
 def render_board(categories: list[Category], evaluation: RobotEvaluation,
                  robot_dir: Path) -> str:
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     cats = [c for c in categories if tier1 or not c.tier1_only]
 
     rows: dict[str, list] = {s: [] for s in ORDER}
@@ -186,7 +196,7 @@ def render_board(categories: list[Category], evaluation: RobotEvaluation,
             rows[status].append((cat, item))
 
     total = sum(len(v) for v in rows.values())
-    finished = len(rows["done"]) + len(rows["na"]) + len(rows["skipped"])
+    finished = len(rows["done"]) + len(rows["na"])  # skipped = deferred, not finished
     achieved = sum(
         r.score for r in evaluation.results.values() if r.score is not None
     )
@@ -203,8 +213,9 @@ def render_board(categories: list[Category], evaluation: RobotEvaluation,
                 if must_have_met(i, evaluation.results.get(i.id)) is False]
     mh_met = sum(1 for c, i in mh_items
                  if must_have_met(i, evaluation.results.get(i.id)) is True)
-    mh_line = (f"**Must-haves:** {mh_met}/{len(mh_items)} met"
-               + (f" — ⛔ UNMET: {', '.join(mh_unmet)}" if mh_unmet else " ✅"))
+    mh_pending = sum(1 for c, i in mh_items
+                     if must_have_met(i, evaluation.results.get(i.id)) is None)
+    mh_line = "**Must-haves:** " + must_have_line(mh_met, len(mh_items), mh_unmet, mh_pending)
 
     lines = [
         f"# Test Board — {evaluation.robot}",
@@ -273,7 +284,7 @@ def render_board_terminal(categories: list[Category], evaluation: RobotEvaluatio
                           robot_dir: Path) -> str:
     """Compact one-line-per-item view for the terminal."""
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    tier1 = is_official(evaluation)  # ValueError on a blank/unknown tier
     out = []
     counts = {s: 0 for s in ORDER}
     for cat in categories:
@@ -297,12 +308,13 @@ def render_board_terminal(categories: list[Category], evaluation: RobotEvaluatio
         out.append(f"{cat.section} / {cat.name}")
         out.extend(shown)
     total = sum(counts.values())
-    finished = counts["done"] + counts["na"] + counts["skipped"]
+    finished = counts["done"] + counts["na"]  # skipped = deferred, not finished
     summary = "  ".join(f"{STATUS_ICONS[s]} {STATUS_LABELS[s]}: {counts[s]}" for s in ORDER)
     mh_items = [i for cat in categories if not (cat.tier1_only and not tier1) for i in cat.items if i.must_have]
     mh_unmet = [i.id for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is False]
     mh_met = sum(1 for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is True)
-    mh = f"⭐ Must-haves: {mh_met}/{len(mh_items)} met" + (f"  ⛔ UNMET: {', '.join(mh_unmet)}" if mh_unmet else "")
+    mh_pending = sum(1 for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is None)
+    mh = "⭐ Must-haves: " + must_have_line(mh_met, len(mh_items), mh_unmet, mh_pending)
     out.insert(
         0,
         f"{evaluation.robot} — evaluation v{evaluation.evaluation_version} — "

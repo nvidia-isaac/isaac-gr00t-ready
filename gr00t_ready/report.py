@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime
 
 from .board import must_have_met
+from .loader import is_official
 from .scoring import CONDITIONAL, FAIL, INCOMPLETE, PASS, EvaluationScore, GateScore
 
 VERDICT_ICONS = {PASS: "✅", CONDITIONAL: "🟡", FAIL: "❌", INCOMPLETE: "⚪"}
@@ -40,7 +41,7 @@ def render_report(score: EvaluationScore) -> str:
         f"# GR00T-Ready Evaluation Report — {ev.robot}",
         "",
         f"- **Evaluation version:** {ev.evaluation_version}",
-        f"- **Tier:** {'Tier 1: Official' if ev.tier == 'official' else 'Tier 2: Self-Serve'}",
+        f"- **Tier:** {'Tier 1: Official' if is_official(ev) else 'Tier 2: Self-Serve'}",
         f"- **Date:** {ev.date}",
         f"- **Evaluator:** {ev.evaluator or 'n/a'}",
         f"- **Overall verdict:** {VERDICT_ICONS[score.overall_verdict]} "
@@ -94,7 +95,10 @@ def render_report(score: EvaluationScore) -> str:
         ]
     if untested:
         lines += ["", "## Not Yet Tested", ""]
-        lines += [f"- **{s.item.id}** {s.item.name}" for s in untested]
+        lines += [f"- **{s.item.id}** {s.item.name}"
+                  + (f" — skipped: {s.result.notes or 'deferred'}"
+                     if s.result is not None and s.result.is_skipped else "")
+                  for s in untested]
 
     lines += ["", "## Detailed Results", ""]
     for gate in score.gates:
@@ -106,13 +110,13 @@ def render_report(score: EvaluationScore) -> str:
             "| --- | --- | --- | --- | --- |",
         ]
         for s in gate.items:
-            if not s.applicable:
-                if s.result is not None and s.result.is_skipped:
-                    status = "skipped"
-                    detail = (s.result.notes or "not testable now — deferred") + " (excluded from totals)"
-                else:
-                    status = "invalid"
-                    detail = "feature not present on this platform — excluded from totals"
+            if s.result is not None and s.result.is_skipped:
+                status = "skipped"
+                detail = ((s.result.notes or "not testable now — deferred")
+                          + " (counts as not yet tested)")
+            elif not s.applicable:
+                status = "invalid"
+                detail = "feature not present on this platform — excluded from totals"
             elif not s.tested:
                 status, detail = "—", "not tested"
             else:
