@@ -41,7 +41,6 @@ class VersioningTest(unittest.TestCase):
             )
             results = (robot_dir / "results" / "results.yaml").read_text()
             self.assertIn("evaluation_version: 0.3\n", results)
-            self.assertEqual(load_results(robot_dir).tier, "self-serve")
 
     def test_legacy_results_default_to_current_version(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -56,7 +55,6 @@ class VersioningTest(unittest.TestCase):
             results_dir.mkdir(parents=True)
             (results_dir / "results.yaml").write_text(
                 "robot: example_robot\n"
-                "tier: official\n"
                 "evaluation_version: 0.2.0\n"
                 "date: 2026-07-16\n"
                 "results: {}\n"

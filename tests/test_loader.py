@@ -32,7 +32,6 @@ class ResultValidationTest(unittest.TestCase):
         categories = [Category("test", "Test", "Hardware", [item])]
         evaluation = RobotEvaluation(
             robot="robot",
-            tier="official",
             date="2026-07-16",
             evaluator="tester",
             results={"HW-TEST-01": Result("HW-TEST-01", 1)},

@@ -4,7 +4,6 @@
 name: _template
 vendor: ""
 model: ""
-tier: self-serve          # self-serve | official
 
 # How to reach the robot's onboard compute (Jetson Thor)
 connection:

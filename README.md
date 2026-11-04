@@ -1,30 +1,32 @@
 # GR00T-Ready Evaluation
 
-GR00T-Ready defines the technical requirements and validation procedures for
-robot platforms integrating with NVIDIA Isaac GR00T. The framework covers the full
+This repo defines what a robot platform needs so it can run GR00T models and the
+associated reference workflows, how to test each requirement, and what evidence
+to keep.
+
+The framework covers the full
 integration surface — whole-body motion control, sensor and actuator fidelity,
 embedded compute, middleware compatibility, end-effector manipulation,
 teleoperation, simulation readiness, security, and OTA capability — and is
 designed to surface integration challenges early, before significant
 development effort is invested.
 
-Two tracks are available for developers:
+This is a self-assessment. It does not grant any NVIDIA designation, and
+engagement with NVIDIA goes through your account team independent of this
+checklist.
 
-- **Self-Serve** supports teams pursuing independent integration, with access
-  to NVIDIA's tooling, documentation, and validation procedures.
-- **GR00T-Ready Verified** follows the same technical baseline and adds
-  commercial and operational criteria — supply-chain scalability, compliance
-  posture, support infrastructure, and developer documentation.
+## Audience and prerequisites
 
-Both tracks are evaluations of platform readiness; completing them does not
-constitute an application or formal agreement with NVIDIA.
+This assessment is for developers integrating humanoid and whole-body robot
+platforms with NVIDIA Isaac GR00T. Before starting, you need:
 
-> [!IMPORTANT]
-> **Release 0.3 is the Self-Serve release.** Evaluators prepare and run tests,
-> verify each outcome against the rubric, and record scores and evidence
-> themselves.
->
-> Completing this evaluation does not grant GR00T-Ready Verified status.
+- A robot with SDK access and documentation for its hardware and software.
+- NVIDIA Jetson Thor flashed with JetPack, booting successfully with its
+  libraries, including CUDA-X, running.
+- Robot firmware compatible with ROS 2 controllers.
+
+Evaluators prepare and run tests, verify each outcome against the rubric, and
+record scores and supporting evidence themselves.
 
 <p align="center"><img src="media/humanoid_robot.jpeg" alt="Humanoid robot" height="300"></p>
 
@@ -85,8 +87,7 @@ python3 -m gr00t_ready checklist robots/my_robot
 
 This creates `robots/my_robot/results/results.yaml`. Update its date and
 evaluator fields, then use it to record scores, notes, and evidence as tests are
-completed. New checklists default to `tier: self-serve`. To evaluate the Official
-tier, set `tier: official` in both the robot profile and the results file.
+completed.
 
 ### 4. Follow progress in the dashboard
 
@@ -155,18 +156,18 @@ Most items use a simple three-level scale:
 Items are grouped into gates such as hardware, sensors, simulation, and
 security. A gate is:
 
-- **Pass** when every applicable item reaches its highest score;
-- **Conditional** when all applicable items work but some only have partial
+- **Ready** when every applicable item reaches its highest score;
+- **Partial** when all applicable items work but some only have partial
   support;
-- **Fail** when an applicable item scores 0;
+- **Not Ready** when an applicable item scores 0;
 - **Incomplete** when required testing is not finished.
 
-Self-Serve displays these verdicts as **Compatible**, **Partial**,
-**Not Compatible**, and **Incomplete**, respectively. Official uses the labels
-above and also includes commercial and operational criteria.
+Incomplete takes precedence while any applicable item is untested. The overall
+verdict uses the same order: Incomplete, Not Ready, Partial, then Ready.
 
-Some items are marked as **must-have**. These must reach their required score
-before the platform can meet the certification baseline.
+Items marked as **must-have** are required for GR00T models and reference
+workflows to function. Each must reach its specified minimum score; the report
+and dashboard track unmet and pending must-haves separately from the point total.
 
 Two additional results are available when a numeric score is not appropriate:
 
@@ -232,3 +233,9 @@ License Agreement.
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
+
+## When your report is finished
+
+Share the report and supporting evidence with your NVIDIA contact. Include any
+remaining integration gaps, skipped tests, and planned follow-up work. Discuss
+engagement through your account team, independent of this checklist.

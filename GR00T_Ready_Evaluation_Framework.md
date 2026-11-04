@@ -5,64 +5,41 @@
 
 ## Purpose
 
-To create a standardized and repeatable framework for assessing whether robot platforms and partners are ready for GR00T integration. It establishes a consistent technical baseline across all tiers (Official and Self-Serve), de-risks development through early feasibility validation, and gates official partnership on both technical and non-commercial readiness across all robot platforms.
+This framework defines what a robot platform needs to run GR00T models and the
+associated reference workflows, how to test each requirement, and what evidence
+to keep. It helps developers identify integration gaps and document technical
+readiness through a repeatable self-assessment.
+
+This is a self-assessment. It does not grant any NVIDIA designation, and
+engagement with NVIDIA goes through your account team independent of this
+checklist.
 
 ## Scope
 
-This evaluation framework defines standardized bring-up and validation procedures for general-purpose humanoid robotics platforms. It encompasses technical baselines (whole-body motion control, sensor and actuator fidelity, embedded compute, middleware compatibility, end-effector manipulation, teleoperation, simulation readiness, security, and OTA capability), tiered engagement models (Official certification vs. Self-Serve adoption), and non-technical readiness (commercial accessibility, supply-chain scalability, compliance posture, support infrastructure, and developer documentation).
+This evaluation framework defines bring-up and validation procedures for
+humanoid and whole-body robot platforms. It covers whole-body motion control,
+sensor and actuator fidelity, embedded compute, middleware compatibility,
+end-effector manipulation, teleoperation, simulation readiness, security, and
+OTA capability.
 
 ## Assumptions
 
 * Robots are available with SDK access.  
-* Thor is flashed with JetPack and successfully boots to the system with all JetPack libraries running, including CUDA-X.  
-* Robot firmware must be compatible with ROS2 controllers.
-
-# SUPPORT TIER DEFINITIONS
-
-Service levels that determine technical baseline targets. Tiers do NOT relax admission criteria.
-
-## Tier 1: Official
-
-Partners that have completed the full GR00T-Ready evaluation and meet all qualification criteria to become an official GR00T platform partner candidate.
-
-### Official Partner Benefits
-
-* **NVIDIA engineering support:** Dedicated technical engagement, priority bug escalation, and roadmap alignment.  
-* **Certification maintenance:** Subject to periodic re-evaluation to ensure continued compliance with evolving GR00T baselines.  
-* **Joint go-to-market:** Eligible for official GR00T Platform Partner designation, developer ecosystem access, and joint marketing collateral.
-
-## Tier 2: Self-Serve
-
-For organizations adopting GR00T components without pursuing official partner certification.
-
-* **Self-administered evaluation:** Use the open technical evaluation framework to independently assess hardware and software compatibility against GR00T baselines.  
-* **Flexible adoption path:** Integrate any subset of the platform (Isaac Sim, Isaac ROS, GR00T models, etc.) as needed, without requiring full-stack certification.  
-* **No official certification commitment:** Participation in this tier does not imply NVIDIA endorsement or official GR00T Platform Partner status.  
-* **Limited NVIDIA engagement:** NVIDIA may provide general guidance, documentation, ecosystem resources, or selective technical feedback, but dedicated engineering support, priority escalation, and roadmap alignment are reserved for Tier 1 partners.  
-* **No admission enforcement:** Commercial criteria (manufacturing scale, global availability, support infrastructure) are not gates for Self-Serve access.
-
-## Tier Selection Impact
-
-Tiers determine the service level and partner designation, not the technical baseline.
-
-* **Evaluation scope:** The same technical baselines apply regardless of tier. Selecting Self-Serve does not lower the technical bar; it simply means the partner is not pursuing formal certification or NVIDIA-backed support at this time.  
-* **Admission criteria:** Official tier requires passing the full evaluation, including commercial and operational readiness. Self-Serve relies on technical self-assessment without formal validation of commercial admission criteria.  
-* **Engagement model:** Tiers do not relax admission criteria. A Self-Serve partner is not partially certified; they are un-certified but enabled. The evaluation framework remains the authoritative gate for Official status.
-
-# PLATFORM ADMISSION CRITERIA
+* NVIDIA Jetson Thor is flashed with JetPack and successfully boots to the system with all JetPack libraries running, including CUDA-X.
+* Robot firmware must be compatible with ROS 2 controllers.
 
 ## TECHNICAL EVALUATION
 
-The **Must-Have** column marks items that are mandatory for Official
-certification. Each entry states the minimum score the item must reach (e.g.
-`1 = Must-Have`) and why it is required (safety / table stakes / critical). A
-must-have item scoring below its stated level blocks certification regardless of
-the overall total. Items with a blank Must-Have cell are scored and contribute to
-the total, but are not on their own gating.
+The **Must-Have** column marks items required for GR00T models and reference
+workflows to function. Each entry states the minimum score the item must reach
+(e.g. `1 = Must-Have`) and why it is required (safety / table stakes / critical).
+An item below its required level is an unmet technical requirement regardless of
+the overall point total. Items with a blank Must-Have cell are scored and
+contribute to the total.
 
-The **Evidence** column and non-technical Evidence sections list the artifacts
-required to document evaluation results and support the assigned score, matching
-the `evidence` fields in `criteria/criteria.yaml`.
+The **Evidence** column lists the artifacts required to document evaluation
+results and support the assigned score, matching the `evidence` fields in
+`criteria/criteria.yaml`.
 
 ### Hardware
 
@@ -193,206 +170,3 @@ the `evidence` fields in `criteria/criteria.yaml`.
 | OTA Operations and Validation |  |  |  |  |
 | OTA logging. Verify OTA logs and audit records  | Version, payload ID, result, trigger source, and failure reason are retained | 0 \= No logs 1 \= Failure logs only  2 \= Full audit logs retained |  | Audit log sample |
 | Post update validation.Run smoke test after OTA reboot  | JetPack, CUDA, TensorRT, Isaac ROS, cameras, network, and robot SDK pass validation | 0 \= No validation  1 \= Boot check only 2 \= Full smoke test passes |  | Smoke-test report covering all components |
-
-## NON-TECHNICAL EVALUATION
-
-This section applies exclusively to Tier 1: Official partners. All gates below must be fully satisfied to achieve Official certification. Tier 2: Self-Serve partners are not required to meet these non-technical criteria; they may proceed with technical self-assessment and modular adoption regardless of commercial readiness, supply-chain scale, or support infrastructure.
-
-### General Commercial Accessibility
-
-#### Requirement
-
-* **Developer-ready distribution:** Will sell to developers with a viable commercial model and accessible procurement path.  
-* **Regional or global availability:** Regionally or globally available to serve the developer and deployment ecosystem.
-
-#### Methodology
-
-* Review pricing model, sales channels, and procurement workflow.  
-* Verify shipping coverage, regional entity presence, and localization.
-
-#### Measurement
-
-* Published developer-kit pricing and accessible procurement path (e-commerce, distributor, or direct).  
-* Regional or global availability with local-language support and in-country warranty service.
-
-#### Evidence
-
-Published pricing + procurement instructions + regional shipping, language-support, and warranty coverage
-
-### Supply-Chain
-
-#### Requirement
-
-Can manufacture at scale, including provision of replacement parts and sustained supply chain.
-
-#### Methodology
-
-* Review production capacity plans and facility certifications.  
-* Audit supplier agreements and second-source coverage for critical components.  
-* Verify replacement-parts inventory strategy and fulfillment process.
-
-#### Measurement
-
-* Documented monthly production capacity and ramp curves.  
-* Replacement parts availability commitment.  
-* Sustained supply chain with qualified, diversified suppliers.
-
-#### Evidence
-
-Monthly capacity and ramp plan + qualified supplier/second-source coverage + replacement-parts commitment
-
-### Compliance Posture
-
-#### Requirement
-
-Integrates Thor and abides by our security posture and technical min spec.
-
-#### Methodology
-
-* Conduct security audit of firmware, boot chain, and access controls.
-
-#### Measurement
-
-* No unauthorized access vectors — backdoor-free architecture confirmed.
-
-#### Evidence
-
-Scoped security audit report + findings and remediation status + firmware, boot-chain, and access-control review
-
-### Support Structure
-
-#### Requirement
-
-Can provide consistent, ongoing support for the above across hardware, software, and logistics.
-
-#### Methodology
-
-* Review support organization, staffing, and technical competency.  
-* Audit ticket-handling infrastructure and escalation procedures.
-
-#### Measurement
-
-* Defined support channels (portal, forum, email minimum).  
-* Response-time SLAs by severity tier.  
-* Clear escalation path.
-
-#### Evidence
-
-Support-channel links + response-time SLAs by severity + escalation procedures
-
-### Documentation
-
-#### Requirement
-
-Developer-ready documentation enabling independent integration and troubleshooting.
-
-#### Methodology
-
-* Review documentation completeness against GR00T integration workflow.  
-* Validate accuracy and version currency of hardware and software guides.
-
-#### Measurement
-
-* Published quick-start guide, hardware integration manual, API reference, and troubleshooting runbook.  
-* Publicly accessible documentation portal with search and sample code.
-
-#### Evidence
-
-Documentation portal and sample-code links + completeness and accuracy review against the GR00T integration workflow
-
-# EVALUATION FLOW
-
-The process: who executes, in what order, and how to proceed or halt. 
-
-## Phase 0: Candidate Review
-
-### Objective
-
-Determine if the candidate has baseline intent and capability to enter the evaluation process.
-
-### Methodology
-
-* **Intent screening:** Confirm the candidate's stated goal \- Official GR00T Platform Partner certification vs. Self-Serve adoption.  
-* **Capability pre-check:** High-level review against the non-technical gates to identify disqualifying gaps before resource commitment.  
-* **Strategic alignment:** Validate that the candidate's target use cases and roadmap align with GR00T scope.
-
-### Proceed / Halt
-
-* Proceed to Phase 1 if intent is confirmed and no disqualifying gaps are identified.  
-* Halt if the candidate is outside GR00T scope or lacks minimum commercial viability.
-
-## Phase 1: Support Tier Selection
-
-### Objective
-
-Lock the engagement tier (Official or Self-Serve) and define the evaluation scope.
-
-### Methodology
-
-* **Tier declaration:** Partner selects Official or Self-Serve. Official requires commitment to full admission criteria; Self-Serve requires commitment to technical self-assessment and compliance posture only.  
-* **Resource alignment:** NVIDIA assigns GR00T-Ready evaluation interface owner.
-
-### Proceed / Halt
-
-* Proceed to Phase 2 upon signed tier agreement and resource allocation.  
-* Halt if the partner cannot commit to the minimum evaluation requirements for the selected tier. Offer Self-Serve path if Official is declined.
-
-## Phase 2: Evaluation
-
-### Objective
-
-Execute the standardized evaluation against GR00T-Ready baselines.
-
-### Measurement
-
-* Each gate scored against the defined criteria in the TECHNICAL and NON-TECHNICAL EVALUATION section.  
-* Official: Pass / Conditional / Fail per gate.  
-* Self-Serve: Self-reported Compatible / Partial / Not Compatible.
-
-**Item score → gate verdict.** A gate's verdict is derived from the scores of its
-applicable items:
-
-* **Fail** — any applicable item scored 0.  
-* **Pass** — every applicable item reached the maximum level defined for it.  
-* **Conditional** — neither of the above (all items above 0, at least one below its maximum).  
-* **Incomplete** — one or more applicable items are untested.
-
-Items the platform cannot support because the measured hardware or feature is
-absent (for example F/T sensors on a platform that has none) are marked
-**invalid**: they are removed from the gate's totals entirely, contributing to
-neither the achieved nor the possible points, and the verdict ignores them. The
-absence must be evidenced, not assumed. Self-Serve relabels the same verdicts
-Compatible / Partial / Not Compatible.
-
-### Proceed / Halt
-
-* Official: Proceed to Phase 3 if all gates Pass or Conditional (with remediation plan). Halt if any gate receives Fail with no viable remediation path.  
-* Self-Serve: No halt mechanism; partner may adopt compatible components regardless of score. No certification is awarded.
-
-## Phase 3: Decision
-
-### Objective
-
-Conclude the evaluation with certification, conditional admission, or rejection.
-
-### Methodology
-
-Path A: Official — All Gates Pass
-
-* Decision: Grant Official GR00T Platform Partner designation.
-
-Path B: Official — Conditional (Remediation Required)
-
-* Iteration: Issue conditional admission with a defined remediation window (e.g., 14 days). Partner addresses gaps (e.g., expands documentation, adds support headcount, fixes security posture).  
-* Re-evaluation: NVIDIA re-tests only the conditional gates.  
-* Decision: Upgrade to Pass and certify, or downgrade to Fail if remediation is incomplete.
-
-Path C: Official — Conversion to Self-Serve
-
-* Decision: Convert to Self-Serve. No formal certification.  
-* Actions: Partners may adopt GR00T components via Self-Serve without restriction. May re-apply for Official evaluation after X months if material improvements are demonstrated.
-
-Path D: Self-Serve — Complete
-
-* Decision: No formal certification. Partner receives confirmation of self-test completion.  
-* Actions: Partner may integrate GR00T components as desired.
