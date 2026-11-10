@@ -29,6 +29,7 @@ import re
 from pathlib import Path
 
 from .loader import Category, RobotEvaluation
+from .scoring import score_evaluation
 
 STATUS_ICONS = {
     "done": "✅",
@@ -73,7 +74,7 @@ def load_blocked_ids(robot_dir: Path) -> set[str]:
     blockers = robot_dir / "BLOCKERS.md"
     if not blockers.exists():
         return set()
-    return set(re.findall(r"\b(?:HW|SW|NT)-[A-Z]+-\d+\b", blockers.read_text()))
+    return set(re.findall(r"\b(?:HW|SW)-[A-Z]+-\d+\b", blockers.read_text()))
 
 
 def must_have_met(item, result):
@@ -101,12 +102,11 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
                     names.add(m)
         return sorted(names)
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
+    score = score_evaluation(categories, evaluation)
     counts = {s: 0 for s in ORDER}
     cats = []
-    for cat in categories:
-        if cat.tier1_only and not tier1:
-            continue
+    for gate in score.gates:
+        cat = gate.category
         items = []
         for item in cat.items:
             status = item_status(item.id, evaluation, robot_dir, blocked_ids)
@@ -134,35 +134,23 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
                 "must_have_met": must_have_met(item, result),
             })
         cats.append({"id": cat.id, "name": cat.name, "section": cat.section,
-                     "items": items})
+                     "verdict": gate.verdict, "items": items})
     total = sum(counts.values())
     finished = counts["done"] + counts["na"] + counts["skipped"]
-    # must-have compliance: certification requires every must-have item to reach
-    # its required level. met=True/False when tested; None when not yet assessed.
     mh = [(c, i) for c in cats for i in c["items"] if i["must_have"]]
     mh_met = [i["id"] for _, i in mh if i["must_have_met"] is True]
     mh_unmet = [i["id"] for _, i in mh if i["must_have_met"] is False]
     mh_pending = [i["id"] for _, i in mh if i["must_have_met"] is None]
-    # point totals, same semantics as scoring.py: invalid items excluded from
-    # both sides; untested items count toward possible
-    achieved = possible = 0
-    for c in cats:
-        for i in c["items"]:
-            if i["status"] in ("na", "skipped"):
-                continue
-            possible += i["max"]
-            if i["score"] is not None:
-                achieved += i["score"]
     return {
         "robot": evaluation.robot,
-        "tier": evaluation.tier,
+        "verdict": score.overall_verdict,
         "evaluation_version": evaluation.evaluation_version,
         "date": evaluation.date,
         "counts": counts,
         "total": total,
         "finished": finished,
-        "score_achieved": achieved,
-        "score_possible": possible,
+        "score_achieved": score.achieved,
+        "score_possible": score.possible,
         "must_have": {
             "total": len(mh),
             "met": len(mh_met),
@@ -176,11 +164,9 @@ def board_data(categories: list[Category], evaluation: RobotEvaluation,
 def render_board(categories: list[Category], evaluation: RobotEvaluation,
                  robot_dir: Path) -> str:
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
-    cats = [c for c in categories if tier1 or not c.tier1_only]
 
     rows: dict[str, list] = {s: [] for s in ORDER}
-    for cat in cats:
+    for cat in categories:
         for item in cat.items:
             status = item_status(item.id, evaluation, robot_dir, blocked_ids)
             rows[status].append((cat, item))
@@ -198,7 +184,7 @@ def render_board(categories: list[Category], evaluation: RobotEvaluation,
     filled = round(bar_len * finished / total) if total else 0
     bar = "█" * filled + "░" * (bar_len - filled)
 
-    mh_items = [(c, i) for c in cats for i in c.items if i.must_have]
+    mh_items = [(c, i) for c in categories for i in c.items if i.must_have]
     mh_unmet = [i.id for c, i in mh_items
                 if must_have_met(i, evaluation.results.get(i.id)) is False]
     mh_met = sum(1 for c, i in mh_items
@@ -233,7 +219,7 @@ def render_board(categories: list[Category], evaluation: RobotEvaluation,
 
     lines += ["", "## All items", ""]
     section = None
-    for cat in cats:
+    for cat in categories:
         if cat.section != section:
             section = cat.section
             lines += [f"### {section}", ""]
@@ -273,12 +259,9 @@ def render_board_terminal(categories: list[Category], evaluation: RobotEvaluatio
                           robot_dir: Path) -> str:
     """Compact one-line-per-item view for the terminal."""
     blocked_ids = load_blocked_ids(robot_dir)
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
     out = []
     counts = {s: 0 for s in ORDER}
     for cat in categories:
-        if cat.tier1_only and not tier1:
-            continue
         shown = []
         for item in cat.items:
             status = item_status(item.id, evaluation, robot_dir, blocked_ids)
@@ -299,7 +282,7 @@ def render_board_terminal(categories: list[Category], evaluation: RobotEvaluatio
     total = sum(counts.values())
     finished = counts["done"] + counts["na"] + counts["skipped"]
     summary = "  ".join(f"{STATUS_ICONS[s]} {STATUS_LABELS[s]}: {counts[s]}" for s in ORDER)
-    mh_items = [i for cat in categories if not (cat.tier1_only and not tier1) for i in cat.items if i.must_have]
+    mh_items = [i for cat in categories for i in cat.items if i.must_have]
     mh_unmet = [i.id for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is False]
     mh_met = sum(1 for i in mh_items if must_have_met(i, evaluation.results.get(i.id)) is True)
     mh = f"⭐ Must-haves: {mh_met}/{len(mh_items)} met" + (f"  ⛔ UNMET: {', '.join(mh_unmet)}" if mh_unmet else "")

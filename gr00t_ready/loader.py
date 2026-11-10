@@ -38,7 +38,7 @@ class Item:
     levels: dict[int, str]
     conditional: bool = False
     must_have: bool = False
-    must_have_level: int = 0  # minimum level required for certification
+    must_have_level: int = 0
 
     @property
     def max_score(self) -> int:
@@ -51,7 +51,6 @@ class Category:
     name: str
     section: str
     items: list[Item]
-    tier1_only: bool = False
 
 
 @dataclass
@@ -87,7 +86,6 @@ class Result:
 @dataclass
 class RobotEvaluation:
     robot: str
-    tier: str
     date: str
     evaluator: str
     evaluation_version: str = __version__
@@ -117,7 +115,6 @@ def load_criteria(path: Path = CRITERIA_PATH) -> list[Category]:
                 name=cat["name"],
                 section=cat["section"],
                 items=items,
-                tier1_only=cat.get("tier1_only", False),
             )
         )
     _check_unique_ids(categories)
@@ -161,7 +158,6 @@ def load_results(robot_dir: Path) -> RobotEvaluation:
         )
     return RobotEvaluation(
         robot=data.get("robot", Path(robot_dir).name),
-        tier=str(data.get("tier", "official")).lower(),
         date=str(data.get("date", datetime.date.today().isoformat())),
         evaluator=str(data.get("evaluator", "")),
         # Result files created before versioning are interpreted using the

@@ -19,10 +19,11 @@ from __future__ import annotations
 
 import datetime
 
+from . import SELF_ASSESSMENT_NOTICE
 from .board import must_have_met
-from .scoring import CONDITIONAL, FAIL, INCOMPLETE, PASS, EvaluationScore, GateScore
+from .scoring import INCOMPLETE, NOT_READY, PARTIAL, READY, EvaluationScore
 
-VERDICT_ICONS = {PASS: "✅", CONDITIONAL: "🟡", FAIL: "❌", INCOMPLETE: "⚪"}
+VERDICT_ICONS = {READY: "✅", PARTIAL: "🟡", NOT_READY: "❌", INCOMPLETE: "⚪"}
 
 
 def render_report(score: EvaluationScore) -> str:
@@ -33,26 +34,28 @@ def render_report(score: EvaluationScore) -> str:
     mh_pending = [it for it, r in mh if must_have_met(it, r) is None]
     mh_met = len(mh) - len(mh_unmet) - len(mh_pending)
     mh_line = (f"- **Must-haves:** {mh_met}/{len(mh)} met"
-               + (f" — ❌ {len(mh_unmet)} UNMET (blocks certification): "
+               + (f" — ❌ {len(mh_unmet)} UNMET: "
                   + ", ".join(it.id for it in mh_unmet) if mh_unmet else "")
                + (f"; {len(mh_pending)} pending" if mh_pending else ""))
     lines = [
         f"# GR00T-Ready Evaluation Report — {ev.robot}",
         "",
+        SELF_ASSESSMENT_NOTICE,
+        "",
         f"- **Evaluation version:** {ev.evaluation_version}",
-        f"- **Tier:** {'Tier 1: Official' if ev.tier == 'official' else 'Tier 2: Self-Serve'}",
         f"- **Date:** {ev.date}",
         f"- **Evaluator:** {ev.evaluator or 'n/a'}",
         f"- **Overall verdict:** {VERDICT_ICONS[score.overall_verdict]} "
-        f"**{score.verdict_label(score.overall_verdict)}**",
+        f"**{score.overall_verdict}**",
         f"- **Overall score:** {score.achieved}/{score.possible} ({score.percent:.1f}%)",
         mh_line,
         f"- **Generated:** {datetime.date.today().isoformat()}",
         "",
+        "Must-have items are required for GR00T and reference workflows to function.",
+        "",
     ]
     if mh_unmet or mh_pending:
-        lines += ["## Must-Have Compliance", "",
-                  "Certification requires every must-have item to reach its required level.", ""]
+        lines += ["## Must-Have Requirements", ""]
         for it, r in mh:
             m = must_have_met(it, r)
             icon = "✅" if m is True else ("❌" if m is False else "⚪")
@@ -71,7 +74,7 @@ def render_report(score: EvaluationScore) -> str:
         applicable = sum(1 for s in gate.items if s.applicable)
         lines.append(
             f"| {gate.category.name} | {gate.category.section} | "
-            f"{VERDICT_ICONS[gate.verdict]} {score.verdict_label(gate.verdict)} | "
+            f"{VERDICT_ICONS[gate.verdict]} {gate.verdict} | "
             f"{gate.achieved}/{gate.possible} ({gate.percent:.0f}%) | "
             f"{tested}/{applicable} |"
         )
@@ -83,7 +86,7 @@ def render_report(score: EvaluationScore) -> str:
     untested = _collect(score, lambda s: not s.tested and s.applicable)
 
     if blockers:
-        lines += ["", "## Blockers (score 0 — gate fails)", ""]
+        lines += ["", "## Blockers (score 0 — not ready)", ""]
         lines += [f"- **{s.item.id}** {s.item.name}: {_result_note(s)}" for s in blockers]
     if gaps:
         lines += ["", "## Gaps (partial support — remediation candidates)", ""]
@@ -100,7 +103,7 @@ def render_report(score: EvaluationScore) -> str:
     for gate in score.gates:
         lines += [
             f"### {gate.category.name} — {VERDICT_ICONS[gate.verdict]} "
-            f"{score.verdict_label(gate.verdict)}",
+            f"{gate.verdict}",
             "",
             "| ID | Item | Score | Result | Evidence / Notes |",
             "| --- | --- | --- | --- | --- |",
