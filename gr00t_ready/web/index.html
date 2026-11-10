@@ -29,6 +29,7 @@ SPDX-License-Identifier: Apache-2.0
   h1 { margin: 0 0 4px; font-size: 20px; }
   h1 .robot { color: var(--accent); }
   .meta { color: var(--muted); font-size: 12px; }
+  .assessment-notice { margin: 14px 0 0; max-width: 1000px; }
   .progress-wrap { margin: 14px 0 6px; display: flex; align-items: center; gap: 12px; }
   .bar { flex: 1; height: 10px; background: var(--panel2); border-radius: 5px; overflow: hidden; }
   .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .4s; }
@@ -113,9 +114,10 @@ SPDX-License-Identifier: Apache-2.0
     <div>
       <h1>GR00T-Ready — <span class="robot" id="robot">…</span></h1>
       <div class="meta" id="meta"></div>
+      <div>Overall verdict: <strong id="verdict">—</strong></div>
     </div>
     <div style="display:flex; gap:10px;">
-      <div class="score-badge" id="mh-badge" title="Must-have items that reached their required level. Any unmet must-have blocks certification.">
+      <div class="score-badge" id="mh-badge" title="Must-have items are required for GR00T and reference workflows to function. Each must reach its required level.">
         <div class="pts" id="mh-pts">—</div>
         <div class="cap">must-haves met</div>
       </div>
@@ -125,6 +127,7 @@ SPDX-License-Identifier: Apache-2.0
       </div>
     </div>
   </div>
+  <p class="assessment-notice">This is a self-assessment. Completing it does not grant any NVIDIA designation and does not create any obligation on NVIDIA to support, review, or engage on your platform. Engagement with NVIDIA goes through your account team, independent of this checklist</p>
   <div class="progress-wrap">
     <div class="bar"><div id="bar"></div></div>
     <div class="pct" id="pct"></div>
@@ -154,7 +157,7 @@ function mhTag(i) {
   if (!i.must_have) return "";
   const req = i.must_have_level;
   if (i.must_have_met === false)
-    return `<span class="mh-tag mh-tag-x" title="MUST-HAVE not met — needs level ${req}, blocks certification">⭐✗</span> `;
+    return `<span class="mh-tag mh-tag-x" title="MUST-HAVE not met — needs level ${req} for GR00T and reference workflows to function">⭐✗</span> `;
   if (i.must_have_met === true)
     return `<span class="mh-tag mh-tag-ok" title="Must-have (min level ${req}) — met">⭐</span> `;
   return `<span class="mh-tag mh-tag-p" title="Must-have (min level ${req}) — not yet assessed">⭐</span> `;
@@ -238,7 +241,8 @@ async function uploadMedia(itemId, input) {
 function render(data) {
   document.getElementById("robot").textContent = data.robot;
   document.getElementById("meta").textContent =
-    `evaluation v${data.evaluation_version} · tier: ${data.tier} · ${data.date} · auto-refreshing`;
+    `evaluation v${data.evaluation_version} · ${data.date} · auto-refreshing`;
+  document.getElementById("verdict").textContent = data.verdict;
   const sp = data.score_possible || 0;
   const spct = sp ? (100 * data.score_achieved / sp).toFixed(1) : "0";
   document.getElementById("score-pts").innerHTML =
@@ -285,7 +289,7 @@ function render(data) {
     return `<section class="cat">
       <div class="cat-head" onclick="toggleCat('${cat.id}')">
         <div class="cat-title">${cat.name}<span class="sec">${cat.section}</span></div>
-        <div class="cat-stats">${done}/${cat.items.length} finished ${isCollapsed ? "▸" : "▾"}</div>
+        <div class="cat-stats">${esc(cat.verdict)} · ${done}/${cat.items.length} finished ${isCollapsed ? "▸" : "▾"}</div>
       </div>
       <table class="${isCollapsed ? "hidden" : ""}">
         <tr><th>Status</th><th>ID</th><th>Item</th><th>Mode</th><th>Score</th><th>Evidence / Notes</th><th>Media</th></tr>

@@ -22,4 +22,11 @@ and renders detailed markdown reports.
 
 from .version import __version__
 
+SELF_ASSESSMENT_NOTICE = (
+    "This is a self-assessment. Completing it does not grant any NVIDIA designation "
+    "and does not create any obligation on NVIDIA to support, review, or engage on "
+    "your platform. Engagement with NVIDIA goes through your account team, independent "
+    "of this checklist"
+)
+
 __all__ = ["__version__"]

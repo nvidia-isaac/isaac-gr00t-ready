@@ -15,10 +15,10 @@
 #               manual = human judgment / physical procedure / document review
 #   conditional true if the item only applies when the hardware feature exists
 #               (score "n/a" in results when absent)
-#   must_have   true if the item is a certification must-have (critical/table-
-#               stakes/safety; see the Must-Have column in
-#               GR00T_Ready_Evaluation_Framework.md). Any must-have
-#               scoring below must_have_level blocks certification.
+#   must_have   true if the item is required for GR00T and reference
+#               workflows to function (critical/table-stakes/safety; see the
+#               Must-Have column in GR00T_Ready_Evaluation_Framework.md).
+#               Scores below must_have_level are unmet technical requirements.
 #   must_have_level  minimum score the must-have item must reach.
 
 version: 1
@@ -1040,79 +1040,3 @@ categories:
           0: No validation
           1: Boot check only
           2: Full smoke test passes
-
-  # ─────────────────── NON-TECHNICAL (Tier 1 only) ───────────────────
-  - id: nt_commercial
-    name: General Commercial Accessibility
-    section: Non-Technical
-    tier1_only: true
-    items:
-      - id: NT-CA-01
-        name: Developer-Ready Distribution and Availability
-        method: Review pricing model, sales channels, procurement workflow; verify shipping coverage, regional entity presence, and localization
-        evidence: "Published pricing + procurement instructions + regional shipping, language-support, and warranty coverage"
-        automation: manual
-        levels:
-          0: No accessible procurement path or availability
-          1: Partial (pricing or availability gaps)
-          2: Published developer-kit pricing, accessible procurement path, regional/global availability with local-language support and in-country warranty
-
-  - id: nt_supply_chain
-    name: Supply-Chain
-    section: Non-Technical
-    tier1_only: true
-    items:
-      - id: NT-SC-01
-        name: Manufacturing Scale and Sustained Supply
-        method: Review production capacity plans and facility certifications; audit supplier agreements and second-source coverage; verify replacement-parts strategy
-        evidence: "Monthly capacity and ramp plan + qualified supplier/second-source coverage + replacement-parts commitment"
-        automation: manual
-        levels:
-          0: Cannot manufacture at scale
-          1: Partial (capacity or parts commitments incomplete)
-          2: Documented monthly capacity and ramp curves, replacement-parts commitment, diversified qualified suppliers
-
-  - id: nt_compliance
-    name: Compliance Posture
-    section: Non-Technical
-    tier1_only: true
-    items:
-      - id: NT-CP-01
-        name: Security Posture and Technical Min Spec
-        method: Conduct security audit of firmware, boot chain, and access controls
-        evidence: "Scoped security audit report + findings and remediation status + firmware, boot-chain, and access-control review"
-        automation: manual
-        levels:
-          0: Unauthorized access vectors found
-          1: Minor findings with remediation plan
-          2: No unauthorized access vectors — backdoor-free architecture confirmed
-
-  - id: nt_support
-    name: Support Structure
-    section: Non-Technical
-    tier1_only: true
-    items:
-      - id: NT-SS-01
-        name: Ongoing Support Across HW/SW/Logistics
-        method: Review support organization, staffing, technical competency; audit ticket-handling infrastructure and escalation procedures
-        evidence: "Support-channel links + response-time SLAs by severity + escalation procedures"
-        automation: manual
-        levels:
-          0: No defined support structure
-          1: Partial (channels or SLAs missing)
-          2: Defined support channels (portal/forum/email), response-time SLAs by severity, clear escalation path
-
-  - id: nt_documentation
-    name: Documentation
-    section: Non-Technical
-    tier1_only: true
-    items:
-      - id: NT-DOC-01
-        name: Developer-Ready Documentation
-        method: Review documentation completeness against GR00T integration workflow; validate accuracy and version currency
-        evidence: "Documentation portal and sample-code links + completeness and accuracy review against the GR00T integration workflow"
-        automation: manual
-        levels:
-          0: Documentation missing or inadequate
-          1: Partial (some guides missing or outdated)
-          2: Published quick-start, hardware integration manual, API reference, troubleshooting runbook, and searchable public portal with sample code

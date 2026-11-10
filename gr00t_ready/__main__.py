@@ -61,7 +61,6 @@ def cmd_checklist(args) -> int:
         return 1
     lines = [
         f"robot: {robot_dir.name}",
-        "tier: self-serve        # self-serve | official",
         f"evaluation_version: {__version__}",
         "date: YYYY-MM-DD",
         "evaluator: ",
@@ -109,12 +108,12 @@ def cmd_score(args) -> int:
     for p in problems:
         print(f"WARNING: {p}", file=sys.stderr)
     score = score_evaluation(categories, evaluation)
-    print(f"Robot: {evaluation.robot}   Tier: {evaluation.tier}   "
+    print(f"Robot: {evaluation.robot}   "
           f"Version: {evaluation.evaluation_version}   Date: {evaluation.date}")
-    print(f"Overall: {score.verdict_label(score.overall_verdict)} "
+    print(f"Overall: {score.overall_verdict} "
           f"— {score.achieved}/{score.possible} ({score.percent:.1f}%)\n")
     for gate in score.gates:
-        print(f"  {score.verdict_label(gate.verdict):<14} "
+        print(f"  {gate.verdict:<14} "
               f"{gate.achieved:>3}/{gate.possible:<3} {gate.category.name}")
     return 0
 

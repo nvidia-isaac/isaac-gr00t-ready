@@ -15,17 +15,16 @@
 
 """Scoring rules.
 
-Per the framework's Phase 2, each gate (category) receives Pass / Conditional / Fail
-for Official tier, or Compatible / Partial / Not Compatible for Self-Serve. The
-mapping from item-level 0/1/2 scores to a gate verdict:
+Each gate (category) receives Ready / Partial / Not Ready / Incomplete.
+The mapping from item-level 0/1/2 scores to a gate verdict:
 
-  - n/a results on conditional items are excluded.
+  - Invalid and skipped results are excluded.
   - INCOMPLETE  if any applicable item has no recorded result.
-  - FAIL        if any applicable item scored 0.
-  - PASS        if every applicable item reached its max defined level.
-  - CONDITIONAL otherwise (all items functional, but some below full support).
+  - NOT READY   if any applicable item scored 0.
+  - READY       if every applicable item reached its max defined level.
+  - PARTIAL     otherwise (all items functional, but some below full support).
 
-The overall score is achieved points / possible points across tested items.
+The overall score is achieved points / possible points across applicable items.
 """
 
 from __future__ import annotations
@@ -34,17 +33,10 @@ from dataclasses import dataclass
 
 from .loader import Category, Item, Result, RobotEvaluation
 
-PASS = "Pass"
-CONDITIONAL = "Conditional"
-FAIL = "Fail"
+READY = "Ready"
+PARTIAL = "Partial"
+NOT_READY = "Not Ready"
 INCOMPLETE = "Incomplete"
-
-SELF_SERVE_LABELS = {
-    PASS: "Compatible",
-    CONDITIONAL: "Partial",
-    FAIL: "Not Compatible",
-    INCOMPLETE: "Incomplete",
-}
 
 
 @dataclass
@@ -106,16 +98,11 @@ class EvaluationScore:
         verdicts = {g.verdict for g in self.gates}
         if INCOMPLETE in verdicts:
             return INCOMPLETE
-        if FAIL in verdicts:
-            return FAIL
-        if CONDITIONAL in verdicts:
-            return CONDITIONAL
-        return PASS
-
-    def verdict_label(self, verdict: str) -> str:
-        if self.evaluation.tier in ("self-serve", "self_serve", "selfserve"):
-            return SELF_SERVE_LABELS.get(verdict, verdict)
-        return verdict
+        if NOT_READY in verdicts:
+            return NOT_READY
+        if PARTIAL in verdicts:
+            return PARTIAL
+        return READY
 
 
 def score_gate(category: Category, evaluation: RobotEvaluation) -> GateScore:
@@ -125,11 +112,11 @@ def score_gate(category: Category, evaluation: RobotEvaluation) -> GateScore:
     if any(not s.tested for s in applicable):
         verdict = INCOMPLETE
     elif any(s.achieved == 0 for s in applicable):
-        verdict = FAIL
+        verdict = NOT_READY
     elif all(s.achieved == s.possible for s in applicable):
-        verdict = PASS
+        verdict = READY
     else:
-        verdict = CONDITIONAL
+        verdict = PARTIAL
 
     achieved = sum(s.achieved for s in applicable if s.tested)
     possible = sum(s.possible for s in applicable)
@@ -139,10 +126,5 @@ def score_gate(category: Category, evaluation: RobotEvaluation) -> GateScore:
 def score_evaluation(
     categories: list[Category], evaluation: RobotEvaluation
 ) -> EvaluationScore:
-    tier1 = evaluation.tier not in ("self-serve", "self_serve", "selfserve")
-    gates = [
-        score_gate(cat, evaluation)
-        for cat in categories
-        if tier1 or not cat.tier1_only
-    ]
+    gates = [score_gate(cat, evaluation) for cat in categories]
     return EvaluationScore(evaluation, gates)
